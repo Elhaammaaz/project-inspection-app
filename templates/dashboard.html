@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Project Inspections{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-0">Project Inspections</h1>
+                <p class="text-muted mt-1">Total projects: <strong>{{ projects.total }}</strong></p>
+            </div>
+            <a href="{{ url_for('new_inspection') }}" class="btn btn-primary btn-lg">+ New Inspection</a>
+        </div>
+    </div>
+</div>
+
+{% if projects.items %}
+    <!-- Desktop View (Table) -->
+    <div class="card d-none d-md-block">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 25%;">Project Name</th>
+                        <th style="width: 15%;">City</th>
+                        <th style="width: 15%;">Building Type</th>
+                        <th style="width: 12%;">Score</th>
+                        <th style="width: 15%;">Status</th>
+                        <th style="width: 18%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects.items %}
+                        <tr>
+                            <td><strong>{{ project.project_name }}</strong></td>
+                            <td>{{ project.city or 'N/A' }}</td>
+                            <td>{{ project.building_type or 'N/A' }}</td>
+                            <td>
+                                {% if project.building_score %}
+                                    <span class="badge bg-info">{{ project.building_score }}%</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.inspection_result == 'Passed' %}
+                                    <span class="badge bg-success">Passed</span>
+                                {% elif project.inspection_result == 'Passed but Need Attention' %}
+                                    <span class="badge bg-warning">Need Attention</span>
+                                {% elif project.inspection_result == 'Not Complied' %}
+                                    <span class="badge bg-danger">Not Complied</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ project.inspection_result or 'Pending' }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('view_inspection', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                <a href="{{ url_for('edit_inspection', project_id=project.id) }}" class="btn btn-sm btn-outline-warning">Edit</a>
+                                <form method="POST" action="{{ url_for('delete_inspection', project_id=project.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this project?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Mobile View (Cards) -->
+    <div class="d-md-none">
+        {% for project in projects.items %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ project.project_name }}</h5>
+                    <p class="card-text text-muted">
+                        <small>
+                            {% if project.city %}<strong>City:</strong> {{ project.city }}<br>{% endif %}
+                            {% if project.building_type %}<strong>Type:</strong> {{ project.building_type }}<br>{% endif %}
+                        </small>
+                    </p>
+                    <div class="mb-2">
+                        {% if project.building_score %}
+                            <span class="badge bg-info">Score: {{ project.building_score }}%</span>
+                        {% endif %}
+                        {% if project.inspection_result %}
+                            {% if project.inspection_result == 'Passed' %}
+                                <span class="badge bg-success">Passed</span>
+                            {% elif project.inspection_result == 'Passed but Need Attention' %}
+                                <span class="badge bg-warning">Need Attention</span>
+                            {% elif project.inspection_result == 'Not Complied' %}
+                                <span class="badge bg-danger">Not Complied</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ project.inspection_result }}</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <p class="card-text"><small class="text-muted">{{ project.created_at.strftime('%b %d, %Y') }}</small></p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('view_inspection', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                        <a href="{{ url_for('edit_inspection', project_id=project.id) }}" class="btn btn-sm btn-outline-warning">Edit</a>
+                        <form method="POST" action="{{ url_for('delete_inspection', project_id=project.id) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger w-100" onclick="return confirm('Are you sure?')">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if projects.pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if projects.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('dashboard', page=projects.prev_num) }}">Previous</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                {% endif %}
+
+                {% for page_num in projects.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num == projects.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dashboard', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if projects.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('dashboard', page=projects.next_num) }}">Next</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+{% else %}
+    <!-- Empty State -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <h5 class="card-title">No projects yet</h5>
+            <p class="card-text text-muted">You haven't created any project inspections yet.</p>
+            <a href="{{ url_for('new_inspection') }}" class="btn btn-primary">Create First Inspection</a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

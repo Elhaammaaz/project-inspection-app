@@ -25,16 +25,25 @@ def create_app():
     
     # Create database tables and seed demo account
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+        except Exception as e:
+            app.logger.error(f"Database initialization error: {e}")
+            print(f"⚠ Database initialization warning: {e}")
         
         # Create demo account if it doesn't exist
-        demo_user = User.query.filter_by(email='demo@example.com').first()
-        if not demo_user:
-            demo_user = User(email='demo@example.com')
-            demo_user.set_password('demo123')
-            db.session.add(demo_user)
-            db.session.commit()
-            print("✓ Demo account created: demo@example.com / demo123")
+        try:
+            demo_user = User.query.filter_by(email='demo@example.com').first()
+            if not demo_user:
+                demo_user = User(email='demo@example.com')
+                demo_user.set_password('demo123')
+                db.session.add(demo_user)
+                db.session.commit()
+                print("✓ Demo account created: demo@example.com / demo123")
+        except Exception as e:
+            app.logger.error(f"Demo user creation error: {e}")
+            db.session.rollback()
+            print(f"⚠ Demo user creation warning: {e}")
     
     # ==================== ROUTES ====================
     

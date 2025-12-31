@@ -276,6 +276,73 @@ def create_app():
         return render_template('register.html', form=form)
     
     
+    # ==================== API ENDPOINTS (FOR POWER BI) ====================
+    
+    @app.route('/api/inspections', methods=['GET'])
+    def api_inspections():
+        """API endpoint for Power BI - Get all project inspections"""
+        from flask import jsonify
+        try:
+            inspections = ProjectInspection.query.all()
+            data = []
+            for inspection in inspections:
+                data.append({
+                    'id': inspection.id,
+                    'user_id': inspection.user_id,
+                    'project_name': inspection.project_name,
+                    'city': inspection.city,
+                    'address': inspection.address,
+                    'gps_latitude': inspection.gps_latitude,
+                    'gps_longitude': inspection.gps_longitude,
+                    'building_type': inspection.building_type,
+                    'primary_use': inspection.primary_use,
+                    'gross_built_area': inspection.gross_built_area,
+                    'number_of_floors': inspection.number_of_floors,
+                    'last_renovation_date': str(inspection.last_renovation_date) if inspection.last_renovation_date else None,
+                    'construction_year': inspection.construction_year,
+                    'current_year': inspection.current_year,
+                    'estimated_life_time': inspection.estimated_life_time,
+                    'planned_retirement_year': inspection.planned_retirement_year,
+                    'inspection_date': str(inspection.inspection_date) if inspection.inspection_date else None,
+                    'fm_contractor': inspection.fm_contractor,
+                    'system_threshold': inspection.system_threshold,
+                    'inspection_result': inspection.inspection_result,
+                    'building_score': inspection.building_score,
+                    'high_priority_classified': inspection.high_priority_classified,
+                    'fm_performance': inspection.fm_performance,
+                    'government_compliance': inspection.government_compliance,
+                    'fire_life_safety': inspection.fire_life_safety,
+                    'total_economic_life': inspection.total_economic_life,
+                    'chronological_age': inspection.chronological_age,
+                    'estimated_effective_age': inspection.estimated_effective_age,
+                    'estimated_remaining_life': inspection.estimated_remaining_life,
+                    'notes': inspection.notes,
+                    'created_at': str(inspection.created_at),
+                    'updated_at': str(inspection.updated_at),
+                })
+            return jsonify(data)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    
+    @app.route('/api/users', methods=['GET'])
+    def api_users():
+        """API endpoint for Power BI - Get all users"""
+        from flask import jsonify
+        try:
+            users = User.query.all()
+            data = []
+            for user in users:
+                data.append({
+                    'id': user.id,
+                    'email': user.email,
+                    'created_at': str(user.created_at),
+                })
+            return jsonify(data)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    
     # Error handlers
     @app.errorhandler(404)
     def not_found_error(error):

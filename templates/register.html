@@ -13,6 +13,21 @@
                 <form method="POST" action="{{ url_for('register') }}" novalidate>
                     {{ form.hidden_tag() }}
                     
+                    <!-- Full Name Field -->
+                    <div class="mb-3">
+                        {{ form.full_name.label(class="form-label") }}
+                        {% if form.full_name.errors %}
+                            {{ form.full_name(class="form-control is-invalid") }}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.full_name.errors %}
+                                    <small>{{ error }}</small><br>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.full_name(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    
                     <!-- Email Field -->
                     <div class="mb-3">
                         {{ form.email.label(class="form-label") }}

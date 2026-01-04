@@ -27,6 +27,11 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     """User registration form"""
+    full_name = StringField('Full Name', validators=[
+        DataRequired(message='Full name is required'),
+        Length(min=2, max=255, message='Name must be between 2 and 255 characters')
+    ], render_kw={'placeholder': 'Your full name'})
+    
     email = StringField('Email Address', validators=[
         DataRequired(message='Email is required'),
         Email(message='Invalid email address'),

@@ -52,12 +52,12 @@ def populate_sample_data():
             
             if not demo_user:
                 print("   [!] Demo user not found. Creating...")
-                demo_user = User(email='demo@example.com', active=1)
+                demo_user = User(email='demo@example.com', full_name='Demo Admin', active=1)
                 demo_user.set_password('demo123')
                 demo_user.approved_at = datetime.utcnow()
                 db.session.add(demo_user)
                 db.session.commit()
-                print("   ✓ Demo user created: demo@example.com / demo123")
+                print("   ✓ Demo user created: demo@example.com / demo123 (ACTIVE)")
             else:
                 print(f"   ✓ Demo user found: {demo_user.email}")
             

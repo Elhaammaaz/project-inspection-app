@@ -85,7 +85,7 @@ def create_app():
         if form.validate_on_submit():
             try:
                 # Create new user (inactive by default)
-                user = User(email=form.email.data)
+                user = User(email=form.email.data, full_name=form.full_name.data)
                 user.set_password(form.password.data)
                 user.active = 0  # Pending approval
                 

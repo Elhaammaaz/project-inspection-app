@@ -85,12 +85,12 @@ def reset_database_hard():
             print("   ✓ All tables created")
             
             print("\n[3] Creating demo user...")
-            demo_user = User(email='demo@example.com', active=1)
+            demo_user = User(email='demo@example.com', full_name='Demo Admin', active=1)
             demo_user.set_password('demo123')
             demo_user.approved_at = datetime.utcnow()
             db.session.add(demo_user)
             db.session.commit()
-            print("   ✓ Demo user created: demo@example.com / demo123")
+            print("   ✓ Demo user created: demo@example.com / demo123 (ACTIVE)")
             
             print("\n" + "=" * 60)
             print("HARD RESET COMPLETE!")

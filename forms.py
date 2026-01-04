@@ -143,10 +143,34 @@ class ProjectInspectionForm(FlaskForm):
 class InspectionSystemForm(FlaskForm):
     """Form for adding/editing individual building system"""
     
-    system_name = StringField('System Name', validators=[
-        DataRequired(message='System name is required'),
-        Length(min=1, max=255)
-    ], render_kw={'placeholder': 'e.g., Fire_LifeSafety'})
+    # 21 building systems as dropdown
+    SYSTEMS = [
+        ('Fire_LifeSafety', 'Fire & Life Safety'),
+        ('Electrical', 'Electrical'),
+        ('Emergency_Power', 'Emergency Power'),
+        ('Mechanical_HVAC', 'Mechanical HVAC'),
+        ('Plumbing_Water', 'Plumbing & Water'),
+        ('Gas_Systems', 'Gas Systems'),
+        ('Vertical_Transportation', 'Vertical Transportation'),
+        ('BMS_Controls', 'BMS Controls'),
+        ('ELV_Systems', 'ELV Systems'),
+        ('Security_Safety', 'Security & Safety'),
+        ('Digital_ICT', 'Digital & ICT'),
+        ('Structural', 'Structural'),
+        ('Architectural_Fabric', 'Architectural Fabric'),
+        ('External_Parking', 'External Parking'),
+        ('Landscape', 'Landscape'),
+        ('Pools_WaterFeatures', 'Pools & Water Features'),
+        ('Waste_Management', 'Waste Management'),
+        ('Sustainability', 'Sustainability'),
+        ('Compliance_Documentation', 'Compliance & Documentation'),
+        ('FM_Performance', 'FM Performance'),
+        ('Governance_Readiness', 'Governance & Readiness'),
+    ]
+    
+    system_name = SelectField('System Name', choices=SYSTEMS, validators=[
+        DataRequired(message='System name is required')
+    ])
     
     item_count = IntegerField('Item Count', validators=[
         DataRequired(message='Item count is required'),

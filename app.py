@@ -2,7 +2,7 @@ from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
 from models import db, User, ProjectInspection
-from forms import LoginForm, ProjectInspectionForm
+from forms import LoginForm, RegistrationForm, ProjectInspectionForm
 from datetime import datetime
 
 
@@ -65,14 +65,43 @@ def create_app():
         if form.validate_on_submit():
             user = User.query.filter_by(email=form.email.data).first()
             
-            if user and user.check_password(form.password.data):
+            if user and user.check_password(form.password.data) and user.active:
                 login_user(user)
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard'))
             else:
-                flash('Email or password is incorrect', 'danger')
+                flash('Email or password is incorrect, or your account is pending approval.', 'danger')
         
         return render_template('login.html', form=form)
+    
+    
+    @app.route('/register', methods=['GET', 'POST'])
+    def register():
+        """User registration route - creates pending account"""
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard'))
+        
+        form = RegistrationForm()
+        if form.validate_on_submit():
+            try:
+                # Create new user (inactive by default)
+                user = User(email=form.email.data)
+                user.set_password(form.password.data)
+                user.active = 0  # Pending approval
+                
+                db.session.add(user)
+                db.session.commit()
+                
+                flash(
+                    'Account request submitted! The admin (demo@example.com) will review and approve your account shortly.',
+                    'success'
+                )
+                return redirect(url_for('login'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error during registration: {str(e)}', 'danger')
+        
+        return render_template('register.html', form=form)
     
     
     @app.route('/logout')
@@ -250,30 +279,77 @@ def create_app():
         return redirect(url_for('dashboard'))
     
     
-    @app.route('/register', methods=['GET', 'POST'])
-    def register():
-        """User registration route"""
-        if current_user.is_authenticated:
+    # ==================== ADMIN ROUTES (FOR ACCOUNT APPROVAL) ====================
+    
+    @app.route('/admin/requests')
+    @login_required
+    def admin_requests():
+        """Admin panel to view and approve pending accounts"""
+        # Only demo user can approve
+        if current_user.email != 'demo@example.com':
+            flash('You do not have permission to access this page.', 'danger')
             return redirect(url_for('dashboard'))
         
-        form = LoginForm()
-        if form.validate_on_submit():
-            # Check if user already exists
-            if User.query.filter_by(email=form.email.data).first():
-                flash('Email already registered. Please log in.', 'warning')
-                return redirect(url_for('login'))
-            
-            # Create new user
-            user = User(email=form.email.data)
-            user.set_password(form.password.data)
-            
-            db.session.add(user)
-            db.session.commit()
-            
-            flash('Registration successful! Please log in.', 'success')
-            return redirect(url_for('login'))
+        # Get pending users
+        pending_users = User.query.filter_by(active=0).all()
+        approved_users = User.query.filter_by(active=1).all()
         
-        return render_template('register.html', form=form)
+        return render_template('admin_requests.html', 
+                             pending_users=pending_users,
+                             approved_users=approved_users)
+    
+    
+    @app.route('/admin/approve/<int:user_id>', methods=['POST'])
+    @login_required
+    def approve_user(user_id):
+        """Approve a pending user account"""
+        # Only demo user can approve
+        if current_user.email != 'demo@example.com':
+            flash('You do not have permission to perform this action.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        user = User.query.get_or_404(user_id)
+        
+        if user.active == 1:
+            flash(f'User {user.email} is already approved.', 'info')
+        else:
+            try:
+                user.active = 1
+                user.approved_at = datetime.utcnow()
+                user.approved_by_id = current_user.id
+                db.session.commit()
+                flash(f'User {user.email} has been approved! They can now log in.', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error approving user: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin_requests'))
+    
+    
+    @app.route('/admin/reject/<int:user_id>', methods=['POST'])
+    @login_required
+    def reject_user(user_id):
+        """Reject and delete a pending user account"""
+        # Only demo user can reject
+        if current_user.email != 'demo@example.com':
+            flash('You do not have permission to perform this action.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        user = User.query.get_or_404(user_id)
+        
+        if user.active == 1:
+            flash(f'Cannot reject an already approved user.', 'warning')
+        else:
+            try:
+                email = user.email
+                db.session.delete(user)
+                db.session.commit()
+                flash(f'User {email} has been rejected and removed.', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error rejecting user: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin_requests'))
     
     
     # ==================== API ENDPOINTS (FOR POWER BI) ====================

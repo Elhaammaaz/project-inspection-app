@@ -7,7 +7,8 @@
     <div class="col-12 col-sm-10 col-md-8 col-lg-5">
         <div class="card">
             <div class="card-body p-4 p-md-5">
-                <h2 class="card-title text-center mb-4">Create Account</h2>
+                <h2 class="card-title text-center mb-2">Create Account</h2>
+                <p class="text-center text-muted mb-4">Request a new account (requires admin approval)</p>
                 
                 <form method="POST" action="{{ url_for('register') }}" novalidate>
                     {{ form.hidden_tag() }}
@@ -23,8 +24,9 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.email(class="form-control", placeholder="Enter your email") }}
+                            {{ form.email(class="form-control") }}
                         {% endif %}
+                        <small class="form-text text-muted">We'll never share your email</small>
                     </div>
                     
                     <!-- Password Field -->
@@ -38,13 +40,37 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.password(class="form-control", placeholder="Minimum 6 characters") }}
+                            {{ form.password(class="form-control") }}
                         {% endif %}
+                    </div>
+                    
+                    <!-- Confirm Password Field -->
+                    <div class="mb-3">
+                        {{ form.confirm_password.label(class="form-label") }}
+                        {% if form.confirm_password.errors %}
+                            {{ form.confirm_password(class="form-control is-invalid") }}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.confirm_password.errors %}
+                                    <small>{{ error }}</small><br>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.confirm_password(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Info Box -->
+                    <div class="alert alert-info" role="alert">
+                        <small>
+                            <strong>⚠️ Account Approval Required:</strong><br>
+                            After you submit this form, the system administrator will review your request. 
+                            You'll be able to log in only after your account is approved.
+                        </small>
                     </div>
                     
                     <!-- Submit Button -->
                     <div class="d-grid gap-2 mb-3">
-                        {{ form.submit(class="btn btn-primary btn-lg", value="Register") }}
+                        {{ form.submit(class="btn btn-primary btn-lg", value="Request Account") }}
                     </div>
                 </form>
                 

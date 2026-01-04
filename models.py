@@ -15,6 +15,15 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Approval System
+    active = db.Column(db.Integer, default=0, nullable=False)  # 0 = pending, 1 = approved
+    approved_at = db.Column(db.DateTime, nullable=True)
+    approved_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    # Self-referential relationship for approver (only one direction)
+    approver = db.relationship('User', remote_side=[id], foreign_keys=[approved_by_id], 
+                              backref='approved_users', cascade='all')
+    
     # Relationships
     project_inspections = db.relationship('ProjectInspection', backref='user', lazy=True, cascade='all, delete-orphan')
     

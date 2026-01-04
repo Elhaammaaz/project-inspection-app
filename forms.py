@@ -17,10 +17,43 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Sign In')
     
     def validate_email(self, field):
-        """Check if email exists in database"""
+        """Check if email exists in database and is active"""
         user = User.query.filter_by(email=field.data).first()
         if not user:
             raise ValidationError('Email or password is incorrect')
+        if not user.active:
+            raise ValidationError('Your account is pending approval. Please wait for admin confirmation.')
+
+
+class RegistrationForm(FlaskForm):
+    """User registration form"""
+    email = StringField('Email Address', validators=[
+        DataRequired(message='Email is required'),
+        Email(message='Invalid email address'),
+        Length(min=5, max=120)
+    ], render_kw={'placeholder': 'your@email.com'})
+    
+    password = PasswordField('Password', validators=[
+        DataRequired(message='Password is required'),
+        Length(min=6, message='Password must be at least 6 characters')
+    ], render_kw={'placeholder': 'At least 6 characters'})
+    
+    confirm_password = PasswordField('Confirm Password', validators=[
+        DataRequired(message='Please confirm your password')
+    ], render_kw={'placeholder': 'Repeat password'})
+    
+    submit = SubmitField('Request Account')
+    
+    def validate_email(self, field):
+        """Check if email already exists"""
+        user = User.query.filter_by(email=field.data).first()
+        if user:
+            raise ValidationError('Email already registered. Please login or use a different email.')
+    
+    def validate_confirm_password(self, field):
+        """Check if passwords match"""
+        if field.data != self.password.data:
+            raise ValidationError('Passwords do not match')
 
 
 class ProjectInspectionForm(FlaskForm):

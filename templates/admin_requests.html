@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin - Account Requests{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-cog"></i> Admin Panel - Account Requests
+            </h1>
+        </div>
+    </div>
+    
+    <!-- Pending Requests Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-hourglass-half"></i> Pending Approval 
+                        <span class="badge bg-danger">{{ pending_users|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if pending_users %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Requested On</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in pending_users %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ user.email }}</strong>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <!-- Approve Button -->
+                                            <form method="POST" action="{{ url_for('approve_user', user_id=user.id) }}" style="display: inline;">
+                                                <button type="submit" class="btn btn-sm btn-success" 
+                                                        onclick="return confirm('Approve {{ user.email }}?')">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                            </form>
+                                            
+                                            <!-- Reject Button -->
+                                            <form method="POST" action="{{ url_for('reject_user', user_id=user.id) }}" style="display: inline;">
+                                                <button type="submit" class="btn btn-sm btn-danger" 
+                                                        onclick="return confirm('Reject {{ user.email }}?')">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success" role="alert">
+                            <i class="fas fa-check-circle"></i> No pending requests. All requests have been processed!
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Approved Users Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users-check"></i> Approved Users
+                        <span class="badge bg-light text-dark">{{ approved_users|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if approved_users %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Approved On</th>
+                                        <th>Approved By</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in approved_users %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ user.email }}</strong>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {% if user.approved_at %}
+                                                    {{ user.approved_at.strftime('%Y-%m-%d %H:%M') }}
+                                                {% else %}
+                                                    Demo Account
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                {% if user.approver %}
+                                                    {{ user.approver.email }}
+                                                {% else %}
+                                                    System
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info" role="alert">
+                            No approved users yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Back to Dashboard -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+{% endblock %}

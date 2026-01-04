@@ -30,17 +30,43 @@
                     <!-- Password Field -->
                     <div class="mb-3">
                         {{ form.password.label(class="form-label") }}
-                        {% if form.password.errors %}
-                            {{ form.password(class="form-control is-invalid") }}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.password.errors %}
-                                    <small>{{ error }}</small><br>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.password(class="form-control", placeholder="Enter your password") }}
-                        {% endif %}
+                        <div class="input-group">
+                            {% if form.password.errors %}
+                                {{ form.password(class="form-control is-invalid", placeholder="Enter your password", id="password-field") }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggle-password-btn">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <div class="invalid-feedback d-block" style="width: 100%;">
+                                    {% for error in form.password.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.password(class="form-control", placeholder="Enter your password", id="password-field") }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggle-password-btn">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            {% endif %}
+                        </div>
                     </div>
+                    
+                    <script>
+                        document.getElementById('toggle-password-btn').addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const passwordField = document.getElementById('password-field');
+                            const toggleBtn = this.querySelector('i');
+                            
+                            if (passwordField.type === 'password') {
+                                passwordField.type = 'text';
+                                toggleBtn.classList.remove('bi-eye');
+                                toggleBtn.classList.add('bi-eye-slash');
+                            } else {
+                                passwordField.type = 'password';
+                                toggleBtn.classList.remove('bi-eye-slash');
+                                toggleBtn.classList.add('bi-eye');
+                            }
+                        });
+                    </script>
                     
                     <!-- Submit Button -->
                     <div class="d-grid gap-2 mb-3">

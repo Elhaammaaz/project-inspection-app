@@ -35,11 +35,21 @@ def create_app():
         try:
             demo_user = User.query.filter_by(email='demo@example.com').first()
             if not demo_user:
-                demo_user = User(email='demo@example.com')
+                demo_user = User(
+                    email='demo@example.com',
+                    full_name='Demo Admin',
+                    active=1  # Approve demo user by default
+                )
                 demo_user.set_password('demo123')
                 db.session.add(demo_user)
                 db.session.commit()
                 print("✓ Demo account created: demo@example.com / demo123")
+            elif demo_user and not demo_user.active:
+                # If demo user exists but is not active, approve them
+                demo_user.active = 1
+                demo_user.full_name = 'Demo Admin'
+                db.session.commit()
+                print("✓ Demo account activated and updated")
         except Exception as e:
             app.logger.error(f"Demo user creation error: {e}")
             db.session.rollback()

@@ -116,6 +116,16 @@ class ProjectInspectionForm(FlaskForm):
     estimated_effective_age = IntegerField('Estimated Effective Age (years)', validators=[Optional(), NumberRange(min=0)])
     estimated_remaining_life = IntegerField('Estimated Remaining Life (years)', validators=[Optional(), NumberRange(min=0)])
     
+    # Additional Metadata
+    inspection_status = SelectField('Inspection Status', choices=[
+        ('draft', 'Draft'),
+        ('completed', 'Completed'),
+        ('reviewed', 'Reviewed')
+    ], default='draft')
+    
+    inspection_by = StringField('Inspector Name', validators=[Optional(), Length(max=255)])
+    reviewed_by = StringField('Reviewer Name', validators=[Optional(), Length(max=255)])
+    
     # Notes
     notes = TextAreaField('Notes', validators=[Optional(), Length(max=5000)], render_kw={
         'rows': 5,
@@ -123,3 +133,41 @@ class ProjectInspectionForm(FlaskForm):
     })
     
     submit = SubmitField('Save Project Inspection')
+
+
+class InspectionSystemForm(FlaskForm):
+    """Form for adding/editing individual building system"""
+    
+    system_name = StringField('System Name', validators=[
+        DataRequired(message='System name is required'),
+        Length(min=1, max=255)
+    ], render_kw={'placeholder': 'e.g., Fire_LifeSafety'})
+    
+    item_count = IntegerField('Item Count', validators=[
+        DataRequired(message='Item count is required'),
+        NumberRange(min=0, message='Item count must be positive')
+    ], render_kw={'placeholder': 'Number of items inspected'})
+    
+    score_percentage = FloatField('Score (%)', validators=[
+        DataRequired(message='Score percentage is required'),
+        NumberRange(min=0, max=100, message='Score must be between 0 and 100')
+    ], render_kw={'placeholder': 'e.g., 54, 73, 78'})
+    
+    weight = FloatField('Weight', validators=[
+        DataRequired(message='Weight is required'),
+        NumberRange(min=0, message='Weight must be positive')
+    ], render_kw={'placeholder': 'e.g., 17.00, 10.00, 2.00'})
+    
+    weighted_score = FloatField('Weighted Score', validators=[
+        DataRequired(message='Weighted score is required'),
+        NumberRange(min=0, message='Weighted score must be positive')
+    ], render_kw={'placeholder': 'e.g., 9, 7, 2'})
+    
+    status = SelectField('Status', choices=[
+        ('', '-- Select Status --'),
+        ('Critical', 'Critical'),
+        ('Warning', 'Warning'),
+        ('Good', 'Good')
+    ], validators=[Optional()])
+    
+    submit = SubmitField('Save System')

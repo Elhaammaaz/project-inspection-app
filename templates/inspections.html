@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Inspections{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-5">Building Inspections</h1>
+            <p class="text-muted">Manage and view your project inspections</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('create_inspection') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle"></i> New Inspection
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <small class="text-muted">Total Inspections</small>
+                    <h3 class="card-title text-primary">{{ inspections | length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <small class="text-muted">Completed</small>
+                    <h3 class="card-title text-success">
+                        {{ inspections | selectattr('inspection_status', 'equalto', 'completed') | list | length }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <small class="text-muted">Drafts</small>
+                    <h3 class="card-title text-warning">
+                        {{ inspections | selectattr('inspection_status', 'equalto', 'draft') | list | length }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <small class="text-muted">With Systems</small>
+                    <h3 class="card-title text-info">
+                        {{ inspections | selectattr('systems') | list | length }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <form class="row g-3" method="GET" action="{{ url_for('inspections') }}">
+                <div class="col-md-8">
+                    <input type="text" class="form-control" name="search" placeholder="Search by project name, city..." value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Inspections Table -->
+    {% if inspections %}
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Project Name</th>
+                            <th>City</th>
+                            <th class="text-center">Building Score</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Systems</th>
+                            <th class="text-center">Inspection Date</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inspection in inspections %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('view_inspection', inspection_id=inspection.id) }}" class="text-decoration-none">
+                                        <strong>{{ inspection.project_name }}</strong>
+                                    </a>
+                                    {% if inspection.building_type %}
+                                        <br><small class="text-muted">{{ inspection.building_type }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ inspection.city or '-' }}</td>
+                                <td class="text-center">
+                                    {% if inspection.building_score %}
+                                        <span class="badge 
+                                            {% if inspection.building_score >= 70 %}
+                                                bg-success
+                                            {% elif inspection.building_score >= 50 %}
+                                                bg-warning
+                                            {% else %}
+                                                bg-danger
+                                            {% endif %}
+                                        ">{{ inspection.building_score }}%</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if inspection.inspection_result == 'Fail' %}
+                                        <span class="badge bg-danger">{{ inspection.inspection_result }}</span>
+                                    {% elif inspection.inspection_result == 'Pass' %}
+                                        <span class="badge bg-success">{{ inspection.inspection_result }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">{{ inspection.inspection_status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-info">
+                                        {{ inspection.systems | length }}/21
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <small>{{ inspection.inspection_date or 'N/A' }}</small>
+                                </td>
+                                <td class="text-center">
+                                    <a href="{{ url_for('view_inspection', inspection_id=inspection.id) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('edit_inspection', inspection_id=inspection.id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{{ url_for('delete_inspection', inspection_id=inspection.id) }}" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Are you sure? This will delete the inspection and all its systems.')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading"><i class="bi bi-info-circle"></i> No Inspections Yet</h4>
+            <p>You haven't created any inspections yet. Start by creating a new inspection.</p>
+            <a href="{{ url_for('create_inspection') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create First Inspection
+            </a>
+        </div>
+    {% endif %}
+
+    <!-- API Info -->
+    <div class="alert alert-light mt-4">
+        <strong><i class="bi bi-api"></i> API Endpoint:</strong>
+        <code>/api/inspections</code> - Returns all inspections with their systems in JSON format for Power BI integration
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    .badge {
+        padding: 0.35rem 0.65rem;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}

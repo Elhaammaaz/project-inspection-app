@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Inspection Form{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5">
+                {% if form.project_name.object_data %}
+                    Edit Inspection: {{ form.project_name.object_data }}
+                {% else %}
+                    New Building Inspection
+                {% endif %}
+            </h1>
+            <p class="text-muted">Complete all sections to create a comprehensive inspection report</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('inspections') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Validation Errors -->
+    {% if form.errors %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <h5 class="alert-heading">Please fix the following errors:</h5>
+        <ul class="mb-0">
+            {% for field, errors in form.errors.items() %}
+                {% for error in errors %}
+                    <li>{{ field }}: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <!-- Form -->
+    <form method="POST" class="needs-validation" novalidate>
+        {{ form.hidden_tag() }}
+
+        <!-- Section 1: Project Information -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-building"></i> Project Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.project_name.label }}</label>
+                        {{ form.project_name(class="form-control" + (" is-invalid" if form.project_name.errors else "")) }}
+                        {% if form.project_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.project_name.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.city.label }}</label>
+                        {{ form.city(class="form-control") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">{{ form.address.label }}</label>
+                        {{ form.address(class="form-control", rows="2") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.gps_latitude.label }}</label>
+                        {{ form.gps_latitude(class="form-control", placeholder="24.7204") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.gps_longitude.label }}</label>
+                        {{ form.gps_longitude(class="form-control", placeholder="46.7048") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Building Details -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-houses"></i> Building Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.building_type.label }}</label>
+                        {{ form.building_type(class="form-control") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.primary_use.label }}</label>
+                        {{ form.primary_use(class="form-control") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.gross_built_area.label }}</label>
+                        {{ form.gross_built_area(class="form-control", placeholder="85000") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.number_of_floors.label }}</label>
+                        {{ form.number_of_floors(class="form-control", placeholder="25") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Dates & Timeline -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Dates & Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.construction_year.label }}</label>
+                        {{ form.construction_year(class="form-control", placeholder="2012") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.current_year.label }}</label>
+                        {{ form.current_year(class="form-control", placeholder="2025") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.last_renovation_date.label }}</label>
+                        {{ form.last_renovation_date(class="form-control", type="date") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.inspection_date.label }}</label>
+                        {{ form.inspection_date(class="form-control", type="date") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.estimated_life_time.label }}</label>
+                        {{ form.estimated_life_time(class="form-control", placeholder="50") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.planned_retirement_year.label }}</label>
+                        {{ form.planned_retirement_year(class="form-control", placeholder="2062") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">{{ form.fm_contractor.label }}</label>
+                        {{ form.fm_contractor(class="form-control") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Age & Life Metrics -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Age & Life Metrics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.total_economic_life.label }}</label>
+                        {{ form.total_economic_life(class="form-control", placeholder="50") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.chronological_age.label }}</label>
+                        {{ form.chronological_age(class="form-control", placeholder="13") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.estimated_effective_age.label }}</label>
+                        {{ form.estimated_effective_age(class="form-control", placeholder="10") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.estimated_remaining_life.label }}</label>
+                        {{ form.estimated_remaining_life(class="form-control", placeholder="40") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">{{ form.fire_life_safety.label }}</label>
+                        {{ form.fire_life_safety(class="form-control", placeholder="54") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 5: Assessment Results -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Assessment Results</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.inspection_result.label }}</label>
+                        {{ form.inspection_result(class="form-select") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.building_score.label }}</label>
+                        {{ form.building_score(class="form-control", placeholder="64") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.high_priority_classified.label }}</label>
+                        {{ form.high_priority_classified(class="form-control", placeholder="183") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.fm_performance.label }}</label>
+                        {{ form.fm_performance(class="form-control", placeholder="61") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">{{ form.government_compliance.label }}</label>
+                        {{ form.government_compliance(class="form-select") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 6: Inspection Management -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Inspection Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.inspection_status.label }}</label>
+                        {{ form.inspection_status(class="form-select") }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.inspection_by.label }}</label>
+                        {{ form.inspection_by(class="form-control") }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.reviewed_by.label }}</label>
+                        {{ form.reviewed_by(class="form-control") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">{{ form.notes.label }}</label>
+                        {{ form.notes(class="form-control") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-circle"></i> Save Inspection
+                </button>
+                <a href="{{ url_for('inspections') }}" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .card-header {
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+    
+    .card {
+        transition: box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+</style>
+
+<script>
+    // Form validation
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+</script>
+{% endblock %}

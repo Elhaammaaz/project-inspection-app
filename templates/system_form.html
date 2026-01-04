@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Add/Edit System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5">
+                {% if system %}
+                    Edit System: {{ system.system_name }}
+                {% else %}
+                    Add Building System
+                {% endif %}
+            </h1>
+            <p class="text-muted">
+                Inspection: <strong>{{ inspection.project_name }}</strong>
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('view_inspection', inspection_id=inspection.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Inspection
+            </a>
+        </div>
+    </div>
+
+    <!-- Validation Errors -->
+    {% if form.errors %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <h5 class="alert-heading">Please fix the following errors:</h5>
+        <ul class="mb-0">
+            {% for field, errors in form.errors.items() %}
+                {% for error in errors %}
+                    <li>{{ field }}: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <!-- Form -->
+    <form method="POST" class="needs-validation" novalidate>
+        {{ form.hidden_tag() }}
+
+        <!-- System Information -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> System Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.system_name.label }}</label>
+                        {{ form.system_name(class="form-control" + (" is-invalid" if form.system_name.errors else "")) }}
+                        {% if form.system_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.system_name.errors[0] }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Examples: Fire_LifeSafety, Electrical, Mechanical_HVAC, Plumbing_Water, etc.
+                        </small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.item_count.label }}</label>
+                        {{ form.item_count(class="form-control" + (" is-invalid" if form.item_count.errors else "")) }}
+                        {% if form.item_count.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.item_count.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Performance Metrics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.score_percentage.label }}</label>
+                        {{ form.score_percentage(class="form-control" + (" is-invalid" if form.score_percentage.errors else ""), placeholder="0-100") }}
+                        {% if form.score_percentage.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.score_percentage.errors[0] }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Enter score as 0-100 (e.g., 54, 73, 78)</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.weight.label }}</label>
+                        {{ form.weight(class="form-control" + (" is-invalid" if form.weight.errors else ""), placeholder="0.00") }}
+                        {% if form.weight.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.weight.errors[0] }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Weight of this system in overall score (e.g., 17.00, 10.00)</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.weighted_score.label }}</label>
+                        {{ form.weighted_score(class="form-control" + (" is-invalid" if form.weighted_score.errors else ""), placeholder="0.00") }}
+                        {% if form.weighted_score.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.weighted_score.errors[0] }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Calculated as: Score % × Weight ÷ 100</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.status.label }}</label>
+                        {{ form.status(class="form-select") }}
+                        <small class="form-text text-muted">System health status</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Reference -->
+        <div class="alert alert-info">
+            <h6><i class="bi bi-lightbulb"></i> Quick Reference - 21 Building Systems:</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <small>
+                        1. Fire_LifeSafety · 2. Electrical · 3. Emergency_Power · 4. Mechanical_HVAC · 5. Plumbing_Water · 
+                        6. Gas_Systems · 7. Vertical_Transportation · 8. BMS_Controls · 9. ELV_Systems · 10. Security_Safety · 
+                        11. Digital_ICT
+                    </small>
+                </div>
+                <div class="col-md-6">
+                    <small>
+                        12. Structural · 13. Architectural_Fabric · 14. External_Parking · 15. Landscape · 16. Pools_WaterFeatures · 
+                        17. Waste_Management · 18. Sustainability · 19. Compliance_Documentation · 20. FM_Performance · 
+                        21. Governance_Readiness
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-circle"></i> Save System
+                </button>
+                <a href="{{ url_for('view_inspection', inspection_id=inspection.id) }}" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Form validation
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+    
+    // Auto-calculate weighted score
+    document.getElementById('score_percentage').addEventListener('change', calculateWeightedScore);
+    document.getElementById('weight').addEventListener('change', calculateWeightedScore);
+    
+    function calculateWeightedScore() {
+        const score = parseFloat(document.getElementById('score_percentage').value) || 0;
+        const weight = parseFloat(document.getElementById('weight').value) || 0;
+        const weightedScore = (score * weight / 100).toFixed(2);
+        document.getElementById('weighted_score').value = weightedScore;
+    }
+</script>
+
+<style>
+    .alert-info {
+        background-color: #e7f3ff;
+        border-color: #b3d9ff;
+    }
+</style>
+{% endblock %}

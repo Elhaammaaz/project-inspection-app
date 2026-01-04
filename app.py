@@ -1,8 +1,8 @@
-from flask import Flask, render_template, redirect, url_for, flash, request
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
-from models import db, User, ProjectInspection
-from forms import LoginForm, RegistrationForm, ProjectInspectionForm
+from models import db, User, ProjectInspection, InspectionSystem
+from forms import LoginForm, RegistrationForm, ProjectInspectionForm, InspectionSystemForm
 from datetime import datetime
 
 
@@ -125,9 +125,31 @@ def create_app():
         return render_template('dashboard.html', projects=projects)
     
     
-    @app.route('/new', methods=['GET', 'POST'])
+    @app.route('/inspections', methods=['GET'])
     @login_required
-    def new_inspection():
+    def inspections():
+        """List all inspections for current user"""
+        search_query = request.args.get('search', '', type=str)
+        
+        if search_query:
+            inspections = ProjectInspection.query.filter_by(user_id=current_user.id)\
+                .filter(
+                    (ProjectInspection.project_name.ilike(f'%{search_query}%')) |
+                    (ProjectInspection.city.ilike(f'%{search_query}%'))
+                )\
+                .order_by(ProjectInspection.created_at.desc())\
+                .all()
+        else:
+            inspections = ProjectInspection.query.filter_by(user_id=current_user.id)\
+                .order_by(ProjectInspection.created_at.desc())\
+                .all()
+        
+        return render_template('inspections.html', inspections=inspections)
+    
+    
+    @app.route('/inspection/new', methods=['GET', 'POST'])
+    @login_required
+    def create_inspection():
         """Create new project inspection"""
         form = ProjectInspectionForm()
         if form.validate_on_submit():
@@ -160,39 +182,42 @@ def create_app():
                 chronological_age=form.chronological_age.data,
                 estimated_effective_age=form.estimated_effective_age.data,
                 estimated_remaining_life=form.estimated_remaining_life.data,
-                notes=form.notes.data
+                notes=form.notes.data,
+                inspection_status=form.inspection_status.data,
+                inspection_by=form.inspection_by.data,
+                reviewed_by=form.reviewed_by.data
             )
             db.session.add(inspection)
             db.session.commit()
             
-            flash('Project inspection saved successfully!', 'success')
-            return redirect(url_for('dashboard'))
+            flash(f'✓ Inspection "{inspection.project_name}" created successfully!', 'success')
+            return redirect(url_for('view_inspection', inspection_id=inspection.id))
         
-        return render_template('form.html', form=form)
+        return render_template('inspection_form.html', form=form)
     
     
-    @app.route('/view/<int:project_id>')
+    @app.route('/inspection/<int:inspection_id>', methods=['GET'])
     @login_required
-    def view_inspection(project_id):
-        """View project inspection details"""
-        inspection = ProjectInspection.query.get_or_404(project_id)
+    def view_inspection(inspection_id):
+        """View project inspection details with all 21 systems"""
+        inspection = ProjectInspection.query.get_or_404(inspection_id)
         
         if inspection.user_id != current_user.id:
-            flash('You do not have permission to view this project.', 'danger')
-            return redirect(url_for('dashboard'))
+            flash('You do not have permission to view this inspection.', 'danger')
+            return redirect(url_for('inspections'))
         
-        return render_template('view.html', inspection=inspection)
+        return render_template('view_inspection.html', inspection=inspection)
     
     
-    @app.route('/edit/<int:project_id>', methods=['GET', 'POST'])
+    @app.route('/inspection/<int:inspection_id>/edit', methods=['GET', 'POST'])
     @login_required
-    def edit_inspection(project_id):
+    def edit_inspection(inspection_id):
         """Edit project inspection"""
-        inspection = ProjectInspection.query.get_or_404(project_id)
+        inspection = ProjectInspection.query.get_or_404(inspection_id)
         
         if inspection.user_id != current_user.id:
-            flash('You do not have permission to edit this project.', 'danger')
-            return redirect(url_for('dashboard'))
+            flash('You do not have permission to edit this inspection.', 'danger')
+            return redirect(url_for('inspections'))
         
         form = ProjectInspectionForm()
         if form.validate_on_submit():
@@ -224,11 +249,14 @@ def create_app():
             inspection.estimated_effective_age = form.estimated_effective_age.data
             inspection.estimated_remaining_life = form.estimated_remaining_life.data
             inspection.notes = form.notes.data
+            inspection.inspection_status = form.inspection_status.data
+            inspection.inspection_by = form.inspection_by.data
+            inspection.reviewed_by = form.reviewed_by.data
             inspection.updated_at = datetime.utcnow()
             
             db.session.commit()
-            flash('Project inspection updated successfully!', 'success')
-            return redirect(url_for('view_inspection', project_id=inspection.id))
+            flash(f'✓ Inspection "{inspection.project_name}" updated successfully!', 'success')
+            return redirect(url_for('view_inspection', inspection_id=inspection.id))
         
         elif request.method == 'GET':
             form.project_name.data = inspection.project_name
@@ -259,24 +287,122 @@ def create_app():
             form.estimated_effective_age.data = inspection.estimated_effective_age
             form.estimated_remaining_life.data = inspection.estimated_remaining_life
             form.notes.data = inspection.notes
+            form.inspection_status.data = inspection.inspection_status
+            form.inspection_by.data = inspection.inspection_by
+            form.reviewed_by.data = inspection.reviewed_by
         
-        return render_template('form.html', form=form, inspection=inspection)
+        return render_template('inspection_form.html', form=form, inspection=inspection)
     
     
-    @app.route('/delete/<int:project_id>', methods=['POST'])
+    @app.route('/inspection/<int:inspection_id>/delete', methods=['POST'])
     @login_required
-    def delete_inspection(project_id):
-        """Delete project inspection"""
-        inspection = ProjectInspection.query.get_or_404(project_id)
+    def delete_inspection(inspection_id):
+        """Delete project inspection and all its systems"""
+        inspection = ProjectInspection.query.get_or_404(inspection_id)
         
         if inspection.user_id != current_user.id:
-            flash('You do not have permission to delete this project.', 'danger')
-            return redirect(url_for('dashboard'))
+            flash('You do not have permission to delete this inspection.', 'danger')
+            return redirect(url_for('inspections'))
         
+        project_name = inspection.project_name
         db.session.delete(inspection)
         db.session.commit()
-        flash('Project inspection deleted successfully!', 'success')
-        return redirect(url_for('dashboard'))
+        flash(f'✓ Inspection "{project_name}" and all its systems deleted successfully!', 'success')
+        return redirect(url_for('inspections'))
+    
+    
+    # ==================== SYSTEM ROUTES ====================
+    
+    @app.route('/inspection/<int:inspection_id>/system/add', methods=['GET', 'POST'])
+    @login_required
+    def add_system(inspection_id):
+        """Add a building system to an inspection"""
+        inspection = ProjectInspection.query.get_or_404(inspection_id)
+        
+        if inspection.user_id != current_user.id:
+            flash('You do not have permission to modify this inspection.', 'danger')
+            return redirect(url_for('inspections'))
+        
+        form = InspectionSystemForm()
+        if form.validate_on_submit():
+            # Check if system with same name already exists for this inspection
+            existing = InspectionSystem.query.filter_by(
+                project_inspection_id=inspection_id,
+                system_name=form.system_name.data
+            ).first()
+            
+            if existing:
+                flash(f'System "{form.system_name.data}" already exists for this inspection.', 'warning')
+            else:
+                system = InspectionSystem(
+                    project_inspection_id=inspection_id,
+                    system_name=form.system_name.data,
+                    item_count=form.item_count.data,
+                    score_percentage=form.score_percentage.data,
+                    weight=form.weight.data,
+                    weighted_score=form.weighted_score.data,
+                    status=form.status.data if form.status.data else None
+                )
+                db.session.add(system)
+                db.session.commit()
+                flash(f'✓ System "{system.system_name}" added successfully!', 'success')
+                return redirect(url_for('view_inspection', inspection_id=inspection_id))
+        
+        return render_template('system_form.html', form=form, inspection=inspection)
+    
+    
+    @app.route('/system/<int:system_id>/edit', methods=['GET', 'POST'])
+    @login_required
+    def edit_system(system_id):
+        """Edit a building system"""
+        system = InspectionSystem.query.get_or_404(system_id)
+        inspection = system.inspection
+        
+        if inspection.user_id != current_user.id:
+            flash('You do not have permission to modify this system.', 'danger')
+            return redirect(url_for('inspections'))
+        
+        form = InspectionSystemForm()
+        if form.validate_on_submit():
+            system.system_name = form.system_name.data
+            system.item_count = form.item_count.data
+            system.score_percentage = form.score_percentage.data
+            system.weight = form.weight.data
+            system.weighted_score = form.weighted_score.data
+            system.status = form.status.data if form.status.data else None
+            system.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+            flash(f'✓ System "{system.system_name}" updated successfully!', 'success')
+            return redirect(url_for('view_inspection', inspection_id=inspection.id))
+        
+        elif request.method == 'GET':
+            form.system_name.data = system.system_name
+            form.item_count.data = system.item_count
+            form.score_percentage.data = system.score_percentage
+            form.weight.data = system.weight
+            form.weighted_score.data = system.weighted_score
+            form.status.data = system.status
+        
+        return render_template('system_form.html', form=form, inspection=inspection, system=system)
+    
+    
+    @app.route('/system/<int:system_id>/delete', methods=['POST'])
+    @login_required
+    def delete_system(system_id):
+        """Delete a building system"""
+        system = InspectionSystem.query.get_or_404(system_id)
+        inspection = system.inspection
+        
+        if inspection.user_id != current_user.id:
+            flash('You do not have permission to delete this system.', 'danger')
+            return redirect(url_for('inspections'))
+        
+        system_name = system.system_name
+        db.session.delete(system)
+        db.session.commit()
+        flash(f'✓ System "{system_name}" deleted successfully!', 'success')
+        return redirect(url_for('view_inspection', inspection_id=inspection.id))
     
     
     # ==================== ADMIN ROUTES (FOR ACCOUNT APPROVAL) ====================
@@ -356,13 +482,31 @@ def create_app():
     
     @app.route('/api/inspections', methods=['GET'])
     def api_inspections():
-        """API endpoint for Power BI - Get all project inspections"""
-        from flask import jsonify
+        """API endpoint for Power BI - Get all project inspections with systems"""
         try:
             inspections = ProjectInspection.query.all()
             data = []
+            
             for inspection in inspections:
-                data.append({
+                # Build systems array for this inspection
+                systems_data = []
+                for system in inspection.systems:
+                    systems_data.append({
+                        'id': system.id,
+                        'system_name': system.system_name,
+                        'item_count': system.item_count,
+                        'score_percentage': system.score_percentage,
+                        'weight': system.weight,
+                        'weighted_score': system.weighted_score,
+                        'status': system.status,
+                        'created_at': str(system.created_at),
+                        'updated_at': str(system.updated_at)
+                    })
+                
+                # Calculate total weighted score
+                total_weighted_score = sum([s.get('weighted_score', 0) for s in systems_data])
+                
+                inspection_data = {
                     'id': inspection.id,
                     'user_id': inspection.user_id,
                     'project_name': inspection.project_name,
@@ -393,18 +537,53 @@ def create_app():
                     'estimated_effective_age': inspection.estimated_effective_age,
                     'estimated_remaining_life': inspection.estimated_remaining_life,
                     'notes': inspection.notes,
+                    'inspection_status': inspection.inspection_status,
+                    'inspection_by': inspection.inspection_by,
+                    'reviewed_by': inspection.reviewed_by,
+                    'systems_count': len(systems_data),
+                    'total_weighted_score': round(total_weighted_score, 2),
+                    'systems': systems_data,
                     'created_at': str(inspection.created_at),
                     'updated_at': str(inspection.updated_at),
-                })
-            return jsonify(data)
+                }
+                data.append(inspection_data)
+            
+            return jsonify({'status': 'success', 'count': len(data), 'data': data})
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+    
+    @app.route('/api/systems', methods=['GET'])
+    def api_systems():
+        """API endpoint for Power BI - Get all building systems across all inspections"""
+        try:
+            systems = InspectionSystem.query.all()
+            data = []
+            
+            for system in systems:
+                data.append({
+                    'id': system.id,
+                    'project_inspection_id': system.project_inspection_id,
+                    'inspection_project_name': system.inspection.project_name,
+                    'inspection_city': system.inspection.city,
+                    'system_name': system.system_name,
+                    'item_count': system.item_count,
+                    'score_percentage': system.score_percentage,
+                    'weight': system.weight,
+                    'weighted_score': system.weighted_score,
+                    'status': system.status,
+                    'created_at': str(system.created_at),
+                    'updated_at': str(system.updated_at)
+                })
+            
+            return jsonify({'status': 'success', 'count': len(data), 'data': data})
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': str(e)}), 500
     
     
     @app.route('/api/users', methods=['GET'])
     def api_users():
         """API endpoint for Power BI - Get all users"""
-        from flask import jsonify
         try:
             users = User.query.all()
             data = []
@@ -412,11 +591,12 @@ def create_app():
                 data.append({
                     'id': user.id,
                     'email': user.email,
+                    'active': user.active,
                     'created_at': str(user.created_at),
                 })
-            return jsonify(data)
+            return jsonify({'status': 'success', 'count': len(data), 'data': data})
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'status': 'error', 'message': str(e)}), 500
     
     
     # Error handlers

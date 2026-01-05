@@ -206,8 +206,64 @@
             </div>
         </div>
 
+        <!-- Power BI Report Access Requests -->
+        <div class="section animate-slide-up" style="animation-delay: 0.55s;">
+            <div class="section-header">
+                <h2>Power BI Report Access Requests</h2>
+                {% set report_requests = report_requests or [] %}
+                {% if report_requests|length == 0 %}
+                    <span class="badge badge-success">All Caught Up</span>
+                {% else %}
+                    <span class="badge badge-warning">{{ report_requests|length }} Pending</span>
+                {% endif %}
+            </div>
+
+            {% if report_requests %}
+                <div class="requests-list">
+                    {% for request in report_requests %}
+                        {% if request.status == 'pending' %}
+                            <div class="request-card animate-item">
+                                <div class="request-header">
+                                    <div class="request-user">
+                                        <h4>{{ request.user.email }}</h4>
+                                        <p class="user-name">{{ request.user.full_name or 'User' }}</p>
+                                    </div>
+                                    <div class="request-date">
+                                        <small>{{ request.requested_at.strftime('%B %d, %Y') }}</small>
+                                    </div>
+                                </div>
+
+                                <div class="request-body">
+                                    <p class="request-status">
+                                        <strong>Status:</strong> <span class="badge badge-warning">Pending Approval</span>
+                                    </p>
+                                </div>
+
+                                <div class="request-actions">
+                                    <form method="POST" action="{{ url_for('approve_report_access', request_id=request.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                    </form>
+
+                                    <button class="btn btn-danger btn-sm" onclick="showRejectReportModal({{ request.id }})">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-pdf"></i>
+                    <p>No pending Power BI report access requests</p>
+                </div>
+            {% endif %}
+        </div>
+
         <!-- Approved Users List -->
-        <div class="section animate-slide-up" style="animation-delay: 0.6s;">
+        <div class="section animate-slide-up" style="animation-delay: 0.65s;">
             <div class="section-header">
                 <h2>Users with Dashboard Access</h2>
                 <span class="badge badge-success">{{ approved_users|length }} Users</span>
@@ -890,6 +946,12 @@ function showRejectModal(requestId) {
 function showRejectChangeModal(changeId) {
     const form = document.getElementById('rejectForm');
     form.action = `/admin/profile-change/${changeId}/reject`;
+    document.getElementById('rejectModal').classList.add('active');
+}
+
+function showRejectReportModal(requestId) {
+    const form = document.getElementById('rejectForm');
+    form.action = `/admin/report-requests/${requestId}/reject`;
     document.getElementById('rejectModal').classList.add('active');
 }
 

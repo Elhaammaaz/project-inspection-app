@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
-from models import db, User, ProjectInspection, InspectionSystem, UserProfile, DashboardAccessRequest, ProfileChangeRequest
+from models import db, User, ProjectInspection, InspectionSystem, UserProfile, DashboardAccessRequest, ProfileChangeRequest, ReportAccessRequest
 from forms import LoginForm, RegistrationForm, ProjectInspectionForm, InspectionSystemForm, UserProfileForm, DashboardAccessRequestForm, ProfileChangeRequestForm
 from datetime import datetime
 
@@ -746,6 +746,7 @@ def create_app():
         
         pending_access_requests = DashboardAccessRequest.query.filter_by(status='pending').all()
         pending_profile_changes = ProfileChangeRequest.query.filter_by(status='pending').all()
+        pending_report_requests = ReportAccessRequest.query.filter_by(status='pending').all()
         
         approved_users = User.query.filter(
             User.id.in_(
@@ -756,6 +757,7 @@ def create_app():
         return render_template('admin_dashboard.html',
                              access_requests=pending_access_requests,
                              profile_changes=pending_profile_changes,
+                             report_requests=pending_report_requests,
                              approved_users=approved_users)
     
     
@@ -825,6 +827,89 @@ def create_app():
             return redirect(url_for('dashboard'))
         
         return render_template('powerbi_dashboard.html')
+    
+    
+    @app.route('/report/powerbi')
+    @login_required
+    def view_powerbi_report():
+        """View Power BI report - requires report access"""
+        if not current_user.can_view_reports:
+            flash('You do not have permission to access the report.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        return render_template('powerbi_report.html')
+    
+    
+    @app.route('/report/request-access')
+    @login_required
+    def request_report_access():
+        """Request Power BI report access"""
+        # Check if user already has a pending request
+        pending_request = ReportAccessRequest.query.filter_by(
+            user_id=current_user.id,
+            status='pending'
+        ).first()
+        
+        if pending_request:
+            flash('You already have a pending request for report access.', 'info')
+            return redirect(url_for('dashboard'))
+        
+        # Check if user already has access
+        if current_user.can_view_reports:
+            flash('You already have access to the report.', 'info')
+            return redirect(url_for('view_powerbi_report'))
+        
+        # Create new request
+        access_request = ReportAccessRequest(user_id=current_user.id)
+        db.session.add(access_request)
+        db.session.commit()
+        
+        flash('✓ Your request for report access has been submitted. An admin will review it soon.', 'success')
+        return redirect(url_for('dashboard'))
+    
+    
+    @app.route('/admin/report-requests/<int:request_id>/approve', methods=['POST'])
+    @login_required
+    def approve_report_access(request_id):
+        """Admin approves report access request"""
+        if not is_admin(current_user):
+            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        
+        access_request = ReportAccessRequest.query.get_or_404(request_id)
+        user = access_request.user
+        
+        # Grant access
+        user.can_view_reports = 1
+        user.reports_approved_date = datetime.utcnow()
+        access_request.status = 'approved'
+        access_request.approved_by_id = current_user.id
+        access_request.approved_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        flash(f'✓ Report access approved for {user.email}', 'success')
+        return redirect(url_for('admin_dashboard'))
+    
+    
+    @app.route('/admin/report-requests/<int:request_id>/reject', methods=['POST'])
+    @login_required
+    def reject_report_access(request_id):
+        """Admin rejects report access request"""
+        if not is_admin(current_user):
+            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        
+        access_request = ReportAccessRequest.query.get_or_404(request_id)
+        reason = request.form.get('reason', 'No reason provided')
+        
+        access_request.status = 'rejected'
+        access_request.rejection_reason = reason
+        access_request.approved_by_id = current_user.id
+        access_request.approved_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        flash(f'✓ Report access request from {access_request.user.email} has been rejected', 'success')
+        return redirect(url_for('admin_dashboard'))
     
     
     @app.route('/admin/access-request/<int:request_id>/approve', methods=['POST'])

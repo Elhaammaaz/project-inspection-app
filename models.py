@@ -225,3 +225,23 @@ class ProfileChangeRequest(db.Model):
     
     def __repr__(self):
         return f'<ProfileChangeRequest {self.id} - User {self.user_id}>'
+
+
+class ReportAccessRequest(db.Model):
+    """Track requests for Power BI Report access with admin approval workflow"""
+    __tablename__ = 'report_access_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    requested_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(50), default='pending')  # pending, approved, rejected
+    approved_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    approved_at = db.Column(db.DateTime, nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)
+    
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='report_requests')
+    approved_by = db.relationship('User', foreign_keys=[approved_by_id])
+    
+    def __repr__(self):
+        return f'<ReportAccessRequest {self.id} - User {self.user_id}>'

@@ -21,6 +21,25 @@ class User(UserMixin, db.Model):
     approved_at = db.Column(db.DateTime, nullable=True)
     approved_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
+    # Access Control (1 = approved, 0 = pending/rejected)
+    can_view_dashboard = db.Column(db.Integer, default=0, nullable=False)
+    can_view_reports = db.Column(db.Integer, default=0, nullable=False)
+    can_export_data = db.Column(db.Integer, default=0, nullable=False)
+    can_manage_users = db.Column(db.Integer, default=0, nullable=False)
+    
+    # Access Request Tracking
+    dashboard_requested = db.Column(db.Integer, default=0, nullable=False)  # 1 = requested, 0 = not requested
+    dashboard_request_date = db.Column(db.DateTime, nullable=True)
+    dashboard_approved_date = db.Column(db.DateTime, nullable=True)
+    
+    reports_requested = db.Column(db.Integer, default=0, nullable=False)
+    reports_request_date = db.Column(db.DateTime, nullable=True)
+    reports_approved_date = db.Column(db.DateTime, nullable=True)
+    
+    export_requested = db.Column(db.Integer, default=0, nullable=False)
+    export_request_date = db.Column(db.DateTime, nullable=True)
+    export_approved_date = db.Column(db.DateTime, nullable=True)
+    
     # Self-referential relationship for approver (only one direction)
     approver = db.relationship('User', remote_side=[id], foreign_keys=[approved_by_id], 
                               backref='approved_users', cascade='all')

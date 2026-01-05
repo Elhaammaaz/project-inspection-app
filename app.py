@@ -759,6 +759,63 @@ def create_app():
                              approved_users=approved_users)
     
     
+    @app.route('/admin/access-management')
+    @login_required
+    def access_management():
+        """Manage user access to dashboard and reports"""
+        if not is_admin(current_user):
+            flash('You do not have permission to access this page.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        # Get all users with access status
+        users = User.query.filter(User.active == 1).all()
+        
+        # Sample projects for dropdown (can be fetched from database in future)
+        projects = [
+            'Downtown Office Complex',
+            'Riverside Commercial Center',
+            'Tech Innovation Hub',
+            'Green Valley Development',
+            'Metropolitan Plaza',
+            'Westside Industrial Park',
+            'Northern Business District',
+            'Central Station Project'
+        ]
+        
+        return render_template('access_management.html', users=users, projects=projects)
+    
+    
+    @app.route('/admin/user/<int:user_id>/access', methods=['POST'])
+    @login_required
+    def update_user_access(user_id):
+        """Update user access permissions"""
+        if not is_admin(current_user):
+            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        
+        user = User.query.get_or_404(user_id)
+        
+        # Update access permissions
+        user.can_view_dashboard = int(request.form.get('can_view_dashboard', 0))
+        user.can_view_reports = int(request.form.get('can_view_reports', 0))
+        user.can_export_data = int(request.form.get('can_export_data', 0))
+        user.can_manage_users = int(request.form.get('can_manage_users', 0))
+        
+        # Update request tracking
+        if user.can_view_dashboard == 1 and not user.dashboard_approved_date:
+            user.dashboard_approved_date = datetime.utcnow()
+        
+        if user.can_view_reports == 1 and not user.reports_approved_date:
+            user.reports_approved_date = datetime.utcnow()
+        
+        if user.can_export_data == 1 and not user.export_approved_date:
+            user.export_approved_date = datetime.utcnow()
+        
+        db.session.commit()
+        
+        flash(f'✓ Access updated for {user.email}', 'success')
+        return redirect(url_for('access_management'))
+    
+    
     @app.route('/admin/access-request/<int:request_id>/approve', methods=['POST'])
     @login_required
     def approve_dashboard_access(request_id):

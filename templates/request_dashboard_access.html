@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}Request Dashboard Access{% endblock %}
+
+{% block content %}
+<div class="request-container">
+    <div class="request-header animate-fade-in">
+        <div class="header-content">
+            <h1 class="request-title">Power BI Dashboard Access</h1>
+            <p class="request-subtitle">Request access to view building assessment reports and analytics</p>
+        </div>
+        <div class="header-icon">
+            <i class="fas fa-chart-pie"></i>
+        </div>
+    </div>
+
+    <div class="request-content">
+        <!-- Dashboard Preview Card -->
+        <div class="card preview-card animate-slide-up">
+            <div class="card-header">
+                <h2>Dashboard Overview</h2>
+            </div>
+            <div class="card-body">
+                <div class="dashboard-features">
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h5>Building Analytics</h5>
+                            <p>View comprehensive building assessment reports and performance metrics</p>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h5>Performance Tracking</h5>
+                            <p>Monitor system performance scores and compliance status across properties</p>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-table"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h5>Detailed Reports</h5>
+                            <p>Access detailed inspection records and historical data trends</p>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h5>Export Options</h5>
+                            <p>Download reports and data for offline analysis and presentations</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Request Form Card -->
+        {% if not existing_request %}
+            <div class="card form-card animate-slide-up">
+                <div class="card-header">
+                    <h2>Submit Access Request</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="access-form">
+                        {{ form.hidden_tag() }}
+
+                        <div class="form-group">
+                            <label for="reason">Reason for Access</label>
+                            <p class="form-label-hint">Please explain why you need access to the Power BI dashboard</p>
+                            {% if form.reason.errors %}
+                                {{ form.reason(class="form-control is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.reason.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.reason(class="form-control") }}
+                            {% endif %}
+                            <small class="form-text">Use clear and concise language (10-500 characters)</small>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label>
+                                <input type="checkbox" required>
+                                <span>I confirm that I need access to this dashboard for work-related purposes</span>
+                            </label>
+                        </div>
+
+                        <div class="form-actions">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            <a href="{{ url_for('user_profile') }}" class="btn btn-secondary btn-lg">Back to Profile</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <!-- Existing Request Status Card -->
+            <div class="card status-card animate-slide-up">
+                <div class="card-header">
+                    <h2>Your Access Request</h2>
+                </div>
+                <div class="card-body">
+                    <div class="request-status-container">
+                        {% if existing_request.status == 'pending' %}
+                            <div class="status-badge pending">
+                                <i class="fas fa-hourglass-half"></i>
+                                <span>Pending Review</span>
+                            </div>
+                            <p class="status-message">
+                                Your dashboard access request is pending admin review. You will receive a notification once it's been processed.
+                            </p>
+                            <div class="request-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Requested On:</span>
+                                    <span class="detail-value">{{ existing_request.requested_at.strftime('%B %d, %Y at %H:%M') }}</span>
+                                </div>
+                            </div>
+                        {% elif existing_request.status == 'approved' %}
+                            <div class="status-badge approved">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Approved</span>
+                            </div>
+                            <p class="status-message">
+                                Your dashboard access has been approved! You can now view the Power BI dashboard.
+                            </p>
+                            <div class="request-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Approved On:</span>
+                                    <span class="detail-value">{{ existing_request.approved_at.strftime('%B %d, %Y at %H:%M') }}</span>
+                                </div>
+                            </div>
+                            <a href="{{ url_for('view_dashboard') }}" class="btn btn-success btn-lg">
+                                <i class="fas fa-chart-pie"></i> View Dashboard
+                            </a>
+                        {% else %}
+                            <div class="status-badge rejected">
+                                <i class="fas fa-times-circle"></i>
+                                <span>Rejected</span>
+                            </div>
+                            <p class="status-message">
+                                Your dashboard access request was rejected.
+                            </p>
+                            {% if existing_request.rejection_reason %}
+                                <div class="rejection-details">
+                                    <h5>Reason:</h5>
+                                    <p>{{ existing_request.rejection_reason }}</p>
+                                </div>
+                            {% endif %}
+                            <div class="request-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Reviewed On:</span>
+                                    <span class="detail-value">{{ existing_request.approved_at.strftime('%B %d, %Y at %H:%M') }}</span>
+                                </div>
+                            </div>
+                            <a href="{{ url_for('user_profile') }}" class="btn btn-secondary btn-lg">
+                                Back to Profile
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Info Card -->
+        <div class="card info-card animate-slide-up">
+            <div class="card-header">
+                <h2>Important Information</h2>
+            </div>
+            <div class="card-body">
+                <div class="info-section">
+                    <h5><i class="fas fa-shield-alt"></i> Security & Privacy</h5>
+                    <p>Dashboard access is restricted and requires admin approval. Your access will be logged for security purposes.</p>
+                </div>
+                <div class="info-section">
+                    <h5><i class="fas fa-lock"></i> Access Controls</h5>
+                    <p>You will only see data relevant to your role and responsibilities. Access can be revoked at any time.</p>
+                </div>
+                <div class="info-section">
+                    <h5><i class="fas fa-question-circle"></i> Questions?</h5>
+                    <p>If you have questions about the dashboard or need assistance, please contact the admin at demo@example.com</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .request-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .request-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+        gap: 30px;
+    }
+
+    .header-content {
+        flex: 1;
+    }
+
+    .request-title {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    .request-subtitle {
+        font-size: 1rem;
+        color: #7f8c8d;
+    }
+
+    .header-icon {
+        font-size: 5rem;
+        color: #667eea;
+        opacity: 0.1;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    .request-content {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+    }
+
+    .card-header h2 {
+        margin: 0;
+        font-size: 1.3rem;
+    }
+
+    .card-body {
+        padding: 25px;
+    }
+
+    /* Preview Card */
+    .dashboard-features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .feature {
+        display: flex;
+        gap: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .feature:hover {
+        background: #e9ecef;
+        transform: translateY(-5px);
+    }
+
+    .feature-icon {
+        font-size: 2rem;
+        color: #667eea;
+        min-width: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .feature-info h5 {
+        margin: 0 0 5px 0;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+
+    .feature-info p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+    }
+
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 25px;
+        animation: slideUp 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .form-label-hint {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        margin: 0 0 8px 0;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-family: inherit;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: #f8f9fa;
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        background-color: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .form-control.is-invalid {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+    }
+
+    .invalid-feedback {
+        display: block;
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 5px;
+    }
+
+    .form-text {
+        display: block;
+        margin-top: 5px;
+        color: #7f8c8d;
+        font-size: 0.85rem;
+    }
+
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        margin: 0;
+        cursor: pointer;
+        font-weight: 500;
+        color: #2c3e50;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        margin-right: 10px;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    /* Status Styles */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 20px;
+    }
+
+    .status-badge.pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .status-badge.approved {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status-badge.rejected {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-message {
+        font-size: 1rem;
+        color: #495057;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+
+    .request-details {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 20px 0;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .detail-value {
+        color: #7f8c8d;
+    }
+
+    .rejection-details {
+        background: #fff5f5;
+        border-left: 4px solid #dc3545;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 15px 0;
+    }
+
+    .rejection-details h5 {
+        margin: 0 0 10px 0;
+        color: #721c24;
+    }
+
+    .rejection-details p {
+        margin: 0;
+        color: #721c24;
+    }
+
+    /* Info Card */
+    .info-section {
+        padding: 15px 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .info-section:last-child {
+        border-bottom: none;
+    }
+
+    .info-section h5 {
+        margin: 0 0 10px 0;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-section p {
+        margin: 0;
+        color: #7f8c8d;
+        line-height: 1.6;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 2px solid #e9ecef;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 12px 30px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        border: none;
+        font-size: 1rem;
+    }
+
+    .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-lg {
+        padding: 14px 35px;
+        font-size: 1.05rem;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .animate-slide-up {
+        animation: slideUp 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    .preview-card { animation-delay: 0s; }
+    .form-card { animation-delay: 0.1s; }
+    .status-card { animation-delay: 0.1s; }
+    .info-card { animation-delay: 0.2s; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .request-header {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .request-title {
+            font-size: 2rem;
+        }
+
+        .header-icon {
+            font-size: 3rem;
+        }
+
+        .dashboard-features {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-lg {
+            width: 100%;
+        }
+
+        .detail-item {
+            flex-direction: column;
+            gap: 5px;
+        }
+    }
+</style>
+{% endblock %}

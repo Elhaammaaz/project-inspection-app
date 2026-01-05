@@ -1,0 +1,730 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header animate-fade-in">
+        <h1 class="admin-title">Admin Dashboard</h1>
+        <p class="admin-subtitle">Manage access requests and user approvals</p>
+    </div>
+
+    <div class="admin-content">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card animate-slide-up">
+                <div class="stat-icon pending">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div class="stat-info">
+                    <h4>Pending Requests</h4>
+                    <p class="stat-value">{{ access_requests|length }}</p>
+                </div>
+            </div>
+
+            <div class="stat-card animate-slide-up" style="animation-delay: 0.1s;">
+                <div class="stat-icon changes">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="stat-info">
+                    <h4>Profile Changes</h4>
+                    <p class="stat-value">{{ profile_changes|length }}</p>
+                </div>
+            </div>
+
+            <div class="stat-card animate-slide-up" style="animation-delay: 0.2s;">
+                <div class="stat-icon approved">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h4>Approved Users</h4>
+                    <p class="stat-value">{{ approved_users|length }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Access Requests -->
+        <div class="section animate-slide-up" style="animation-delay: 0.3s;">
+            <div class="section-header">
+                <h2>Dashboard Access Requests</h2>
+                {% if access_requests|length == 0 %}
+                    <span class="badge badge-success">All Caught Up</span>
+                {% else %}
+                    <span class="badge badge-warning">{{ access_requests|length }} Pending</span>
+                {% endif %}
+            </div>
+
+            {% if access_requests %}
+                <div class="requests-list">
+                    {% for request in access_requests %}
+                        <div class="request-card animate-item">
+                            <div class="request-header">
+                                <div class="request-user">
+                                    <h4>{{ request.user.email }}</h4>
+                                    <p class="user-name">{{ request.user.full_name or 'User' }}</p>
+                                </div>
+                                <div class="request-date">
+                                    <small>{{ request.requested_at.strftime('%B %d, %Y') }}</small>
+                                </div>
+                            </div>
+
+                            <div class="request-body">
+                                <p class="request-status">
+                                    <strong>Status:</strong> <span class="badge badge-warning">Pending</span>
+                                </p>
+                            </div>
+
+                            <div class="request-actions">
+                                <form method="POST" action="{{ url_for('approve_dashboard_access', request_id=request.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                </form>
+
+                                <button class="btn btn-danger btn-sm" onclick="showRejectModal({{ request.id }})">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No pending dashboard access requests</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Profile Change Requests -->
+        <div class="section animate-slide-up" style="animation-delay: 0.4s;">
+            <div class="section-header">
+                <h2>Profile Change Requests</h2>
+                {% if profile_changes|length == 0 %}
+                    <span class="badge badge-success">All Caught Up</span>
+                {% else %}
+                    <span class="badge badge-info">{{ profile_changes|length }} Pending</span>
+                {% endif %}
+            </div>
+
+            {% if profile_changes %}
+                <div class="changes-list">
+                    {% for change in profile_changes %}
+                        <div class="change-card animate-item">
+                            <div class="change-header">
+                                <div class="change-user">
+                                    <h4>{{ change.user.email }}</h4>
+                                    <p class="change-field">{{ change.field_name.replace('_', ' ').title() }}</p>
+                                </div>
+                                <span class="badge badge-warning">{{ change.requested_at.strftime('%B %d, %Y') }}</span>
+                            </div>
+
+                            <div class="change-body">
+                                <div class="change-comparison">
+                                    <div class="old-value">
+                                        <strong>Current:</strong>
+                                        <p>{{ change.old_value or 'Not set' }}</p>
+                                    </div>
+                                    <div class="change-arrow">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
+                                    <div class="new-value">
+                                        <strong>Requested:</strong>
+                                        <p>{{ change.new_value }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="change-actions">
+                                <form method="POST" action="{{ url_for('approve_profile_change', change_id=change.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                </form>
+
+                                <button class="btn btn-danger btn-sm" onclick="showRejectChangeModal({{ change.id }})">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-check"></i>
+                    <p>No pending profile change requests</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Approved Users List -->
+        <div class="section animate-slide-up" style="animation-delay: 0.5s;">
+            <div class="section-header">
+                <h2>Users with Dashboard Access</h2>
+                <span class="badge badge-success">{{ approved_users|length }} Users</span>
+            </div>
+
+            {% if approved_users %}
+                <div class="users-grid">
+                    {% for user in approved_users %}
+                        <div class="user-card animate-item">
+                            <div class="user-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <h5>{{ user.full_name or user.email }}</h5>
+                            <p>{{ user.email }}</p>
+                            <p class="user-join-date">Joined: {{ user.created_at.strftime('%b %d, %Y') }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <p>No users have dashboard access yet</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content animate-slide-up">
+        <div class="modal-header">
+            <h3>Reject Request</h3>
+            <button class="modal-close" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <form id="rejectForm" method="POST">
+            <div class="form-group">
+                <label for="reason">Reason for Rejection</label>
+                <textarea name="reason" id="reason" class="form-control" rows="4" placeholder="Provide a reason for rejection..." required></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-danger">Reject Request</button>
+                <button type="button" class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .admin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .admin-header {
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .admin-title {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    .admin-subtitle {
+        font-size: 1rem;
+        color: #7f8c8d;
+    }
+
+    .admin-content {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .stat-card:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        transform: translateY(-5px);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        min-width: 60px;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    .stat-icon.pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .stat-icon.changes {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+
+    .stat-icon.approved {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .stat-info h4 {
+        margin: 0 0 5px 0;
+        color: #2c3e50;
+        font-size: 0.95rem;
+    }
+
+    .stat-value {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    /* Sections */
+    .section {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .section-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .section-header h2 {
+        margin: 0;
+        font-size: 1.3rem;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .badge-warning {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .badge-info {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+
+    .badge-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #7f8c8d;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        opacity: 0.3;
+        display: block;
+        margin-bottom: 15px;
+    }
+
+    /* Requests List */
+    .requests-list,
+    .changes-list {
+        padding: 20px;
+    }
+
+    .request-card,
+    .change-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+    }
+
+    .request-card:hover,
+    .change-card:hover {
+        background: #f0f7ff;
+        transform: translateX(5px);
+    }
+
+    .request-header,
+    .change-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .request-user h4,
+    .change-user h4 {
+        margin: 0 0 5px 0;
+        color: #2c3e50;
+    }
+
+    .user-name,
+    .change-field {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+    }
+
+    .request-date {
+        text-align: right;
+    }
+
+    .request-date small {
+        color: #7f8c8d;
+    }
+
+    .request-body {
+        margin-bottom: 15px;
+    }
+
+    .request-status {
+        margin: 0;
+        font-size: 0.95rem;
+    }
+
+    /* Change Comparison */
+    .change-comparison {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 15px;
+        align-items: center;
+        margin: 15px 0;
+        padding: 15px;
+        background: white;
+        border-radius: 6px;
+    }
+
+    .old-value,
+    .new-value {
+        padding: 10px;
+    }
+
+    .old-value strong,
+    .new-value strong {
+        display: block;
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        margin-bottom: 5px;
+    }
+
+    .old-value p,
+    .new-value p {
+        margin: 0;
+        color: #2c3e50;
+        word-break: break-word;
+    }
+
+    .change-arrow {
+        text-align: center;
+        color: #667eea;
+        font-size: 1.2rem;
+    }
+
+    /* Actions */
+    .request-actions,
+    .change-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: none;
+        font-size: 0.9rem;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+    }
+
+    /* Users Grid */
+    .users-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .user-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .user-card:hover {
+        background: #f0f7ff;
+        transform: translateY(-5px);
+    }
+
+    .user-avatar {
+        font-size: 3rem;
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+
+    .user-card h5 {
+        margin: 0 0 5px 0;
+        color: #2c3e50;
+    }
+
+    .user-card p {
+        margin: 0 0 10px 0;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    .user-join-date {
+        font-size: 0.85rem;
+        color: #95a5a6;
+    }
+
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.3s ease;
+    }
+
+    .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: #2c3e50;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: #7f8c8d;
+        transition: color 0.3s ease;
+    }
+
+    .modal-close:hover {
+        color: #2c3e50;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-family: inherit;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .animate-slide-up {
+        animation: slideUp 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    .animate-item {
+        animation: slideUp 0.4s ease-out forwards;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .admin-title {
+            font-size: 2rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .request-header,
+        .change-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .change-comparison {
+            grid-template-columns: 1fr;
+        }
+
+        .change-arrow {
+            transform: rotate(90deg);
+        }
+
+        .users-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+
+        .modal-content {
+            margin: 20px;
+        }
+    }
+</style>
+
+<script>
+function showRejectModal(requestId) {
+    const form = document.getElementById('rejectForm');
+    form.action = `/admin/access-request/${requestId}/reject`;
+    document.getElementById('rejectModal').classList.add('active');
+}
+
+function showRejectChangeModal(changeId) {
+    const form = document.getElementById('rejectForm');
+    form.action = `/admin/profile-change/${changeId}/reject`;
+    document.getElementById('rejectModal').classList.add('active');
+}
+
+function closeRejectModal() {
+    document.getElementById('rejectModal').classList.remove('active');
+}
+
+// Close modal when clicking outside
+document.getElementById('rejectModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRejectModal();
+    }
+});
+</script>
+{% endblock %}

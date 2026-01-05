@@ -1,0 +1,49 @@
+// ========================================
+// DAX QUERY - PASTE INTO POWER BI DAX EDITOR
+// ========================================
+
+DEFINE
+    MEASURE 'project_inspections'[Total Inspections] = COUNTROWS('project_inspections'),
+    MEASURE 'project_inspections'[Average Building Score] = AVERAGE('project_inspections'[building_score]),
+    MEASURE 'project_inspections'[Buildings Critical Status] = CALCULATE(COUNTROWS('inspection_systems'), 'inspection_systems'[status] = "Critical"),
+    MEASURE 'project_inspections'[Buildings Good Status] = CALCULATE(COUNTROWS('inspection_systems'), 'inspection_systems'[status] = "Good"),
+    MEASURE 'project_inspections'[Compliance Rate %] = DIVIDE(CALCULATE(COUNTROWS('project_inspections'), 'project_inspections'[government_compliance] = "Compliant"), COUNTROWS('project_inspections'), 0) * 100,
+    MEASURE 'project_inspections'[Average FM Performance] = AVERAGE('project_inspections'[fm_performance]),
+    MEASURE 'project_inspections'[Fire Life Safety Score] = AVERAGE('project_inspections'[fire_life_safety]),
+    MEASURE 'project_inspections'[Systems in Critical] = CALCULATE(COUNTROWS('inspection_systems'), 'inspection_systems'[status] = "Critical"),
+    MEASURE 'project_inspections'[Completed vs Total %] = DIVIDE(CALCULATE(COUNTROWS('project_inspections'), 'project_inspections'[inspection_status] = "Completed"), COUNTROWS('project_inspections'), 0) * 100,
+    MEASURE 'project_inspections'[High Priority Count] = CALCULATE(COUNTROWS('project_inspections'), 'project_inspections'[high_priority_classified] = 1),
+    MEASURE 'project_inspections'[Average System Score] = AVERAGE('inspection_systems'[weighted_score]),
+    MEASURE 'project_inspections'[Government Compliance Score] = AVERAGE('project_inspections'[government_compliance]),
+    MEASURE 'project_inspections'[Total Buildings Analyzed] = DISTINCTCOUNT('project_inspections'[id]),
+    MEASURE 'project_inspections'[Average Remaining Life Years] = AVERAGE('project_inspections'[estimated_remaining_life]),
+    MEASURE 'project_inspections'[Buildings Needing Renovation] = CALCULATE(COUNTROWS('project_inspections'), 'project_inspections'[estimated_remaining_life] < 10),
+    MEASURE 'project_inspections'[Top System by Score] = MAXX(TOPN(1, VALUES('inspection_systems'[system_name]), AVERAGE('inspection_systems'[score_percentage]), DESC), 'inspection_systems'[system_name]),
+    MEASURE 'project_inspections'[Average Age Years] = AVERAGE('project_inspections'[chronological_age]),
+    MEASURE 'project_inspections'[Construction Year Range] = FORMAT(MIN('project_inspections'[construction_year]), "0") & " - " & FORMAT(MAX('project_inspections'[construction_year]), "0"),
+    MEASURE 'project_inspections'[Total System Types] = DISTINCTCOUNT('inspection_systems'[system_name]),
+    MEASURE 'project_inspections'[Last Inspection Date] = MAX('project_inspections'[inspection_date])
+
+EVALUATE
+ROW(
+    "Total Inspections", [Total Inspections],
+    "Average Building Score", [Average Building Score],
+    "Buildings Critical", [Buildings Critical Status],
+    "Buildings Good", [Buildings Good Status],
+    "Compliance Rate %", [Compliance Rate %],
+    "FM Performance", [Average FM Performance],
+    "Fire Safety Score", [Fire Life Safety Score],
+    "Systems Critical", [Systems in Critical],
+    "Completed %", [Completed vs Total %],
+    "High Priority Count", [High Priority Count],
+    "Avg System Score", [Average System Score],
+    "Compliance Score", [Government Compliance Score],
+    "Total Buildings", [Total Buildings Analyzed],
+    "Avg Remaining Life", [Average Remaining Life Years],
+    "Buildings Renovate Soon", [Buildings Needing Renovation],
+    "Top System", [Top System by Score],
+    "Avg Age Years", [Average Age Years],
+    "Year Range", [Construction Year Range],
+    "Total System Types", [Total System Types],
+    "Last Inspection Date", [Last Inspection Date]
+)

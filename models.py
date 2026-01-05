@@ -125,3 +125,84 @@ class InspectionSystem(db.Model):
     
     def __repr__(self):
         return f'<InspectionSystem {self.id} - {self.system_name}>'
+
+
+class UserProfile(db.Model):
+    """User profile information for dashboard access and personal data management"""
+    __tablename__ = 'user_profiles'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True, index=True)
+    
+    # Profile Information
+    department = db.Column(db.String(255), nullable=True)
+    job_title = db.Column(db.String(255), nullable=True)
+    phone = db.Column(db.String(20), nullable=True)
+    office_location = db.Column(db.String(255), nullable=True)
+    role = db.Column(db.String(50), default='user')  # user, admin, manager
+    
+    # Permissions
+    can_view_dashboard = db.Column(db.Integer, default=0)  # 0 = no, 1 = yes
+    can_view_reports = db.Column(db.Integer, default=0)
+    dashboard_access_approved_at = db.Column(db.DateTime, nullable=True)
+    
+    # Preferences
+    theme = db.Column(db.String(50), default='light')  # light, dark
+    notifications_enabled = db.Column(db.Integer, default=1)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship
+    user = db.relationship('User', backref='profile', uselist=False)
+    
+    def __repr__(self):
+        return f'<UserProfile {self.user_id}>'
+
+
+class DashboardAccessRequest(db.Model):
+    """Track requests for dashboard access with admin approval workflow"""
+    __tablename__ = 'dashboard_access_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    requested_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(50), default='pending')  # pending, approved, rejected
+    approved_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    approved_at = db.Column(db.DateTime, nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)
+    
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='dashboard_requests')
+    approved_by = db.relationship('User', foreign_keys=[approved_by_id])
+    
+    def __repr__(self):
+        return f'<DashboardAccessRequest {self.id} - User {self.user_id}>'
+
+
+class ProfileChangeRequest(db.Model):
+    """Track profile change requests that require admin approval"""
+    __tablename__ = 'profile_change_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    requested_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(50), default='pending')  # pending, approved, rejected
+    
+    # Changes Requested
+    field_name = db.Column(db.String(255), nullable=False)  # full_name, phone, department, etc.
+    old_value = db.Column(db.Text, nullable=True)
+    new_value = db.Column(db.Text, nullable=False)
+    
+    # Admin Review
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)
+    
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='profile_change_requests')
+    reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id])
+    
+    def __repr__(self):
+        return f'<ProfileChangeRequest {self.id} - User {self.user_id}>'

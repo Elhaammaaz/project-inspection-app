@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, FloatField, IntegerField, DateField, TextAreaField, SelectField, SubmitField
+from wtforms import StringField, PasswordField, FloatField, IntegerField, DateField, TextAreaField, SelectField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Email, Length, ValidationError, Optional, NumberRange
 from models import User
 
@@ -200,3 +200,76 @@ class InspectionSystemForm(FlaskForm):
     ], validators=[Optional()])
     
     submit = SubmitField('Save System')
+
+
+class UserProfileForm(FlaskForm):
+    """User profile information form with data that may require admin approval"""
+    
+    full_name = StringField('Full Name', validators=[
+        DataRequired(message='Full name is required'),
+        Length(min=2, max=255, message='Name must be between 2 and 255 characters')
+    ], render_kw={'placeholder': 'Your full name'})
+    
+    phone = StringField('Phone Number', validators=[
+        Optional(),
+        Length(min=7, max=20, message='Phone number must be between 7 and 20 characters')
+    ], render_kw={'placeholder': '+966 XX XXX XXXX'})
+    
+    department = StringField('Department', validators=[
+        Optional(),
+        Length(max=255)
+    ], render_kw={'placeholder': 'e.g., Operations, Finance, IT, Maintenance'})
+    
+    job_title = StringField('Job Title', validators=[
+        Optional(),
+        Length(max=255)
+    ], render_kw={'placeholder': 'e.g., Senior Manager, Inspector, Coordinator'})
+    
+    office_location = StringField('Office Location', validators=[
+        Optional(),
+        Length(max=255)
+    ], render_kw={'placeholder': 'e.g., Riyadh Office, Dubai Branch'})
+    
+    theme = SelectField('Theme Preference', choices=[
+        ('light', 'Light Mode'),
+        ('dark', 'Dark Mode')
+    ], default='light')
+    
+    notifications_enabled = BooleanField('Enable Notifications', default=True)
+    
+    submit = SubmitField('Update Profile')
+
+
+class DashboardAccessRequestForm(FlaskForm):
+    """Form to request dashboard access"""
+    
+    reason = TextAreaField('Reason for Dashboard Access', validators=[
+        DataRequired(message='Please provide a reason'),
+        Length(min=10, max=500, message='Reason must be between 10 and 500 characters')
+    ], render_kw={
+        'rows': 4,
+        'placeholder': 'Explain why you need access to the Power BI dashboard...'
+    })
+    
+    submit = SubmitField('Request Dashboard Access')
+
+
+class ProfileChangeRequestForm(FlaskForm):
+    """Form to request profile changes that need admin approval"""
+    
+    field_name = SelectField('Field to Update', choices=[
+        ('', '-- Select Field --'),
+        ('full_name', 'Full Name'),
+        ('phone', 'Phone Number'),
+        ('department', 'Department'),
+        ('job_title', 'Job Title'),
+        ('office_location', 'Office Location'),
+    ], validators=[DataRequired(message='Please select a field to update')])
+    
+    new_value = TextAreaField('New Value', validators=[
+        DataRequired(message='New value is required'),
+        Length(min=1, max=500, message='New value must be between 1 and 500 characters')
+    ], render_kw={'rows': 3, 'placeholder': 'Enter the new value for this field'})
+    
+    submit = SubmitField('Request Change')
+

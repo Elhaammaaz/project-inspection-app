@@ -1,8 +1,8 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
-from models import db, User, ProjectInspection, InspectionSystem
-from forms import LoginForm, RegistrationForm, ProjectInspectionForm, InspectionSystemForm
+from models import db, User, ProjectInspection, InspectionSystem, UserProfile, DashboardAccessRequest, ProfileChangeRequest
+from forms import LoginForm, RegistrationForm, ProjectInspectionForm, InspectionSystemForm, UserProfileForm, DashboardAccessRequestForm, ProfileChangeRequestForm
 from datetime import datetime
 
 
@@ -607,6 +607,290 @@ def create_app():
             return jsonify({'status': 'success', 'count': len(data), 'data': data})
         except Exception as e:
             return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+    
+    # ==================== USER PROFILE ROUTES ====================
+    
+    @app.route('/profile')
+    @login_required
+    def user_profile():
+        """View user profile"""
+        profile = UserProfile.query.filter_by(user_id=current_user.id).first()
+        if not profile:
+            profile = UserProfile(user_id=current_user.id)
+            db.session.add(profile)
+            db.session.commit()
+        
+        dashboard_requests = DashboardAccessRequest.query.filter_by(user_id=current_user.id).all()
+        profile_changes = ProfileChangeRequest.query.filter_by(user_id=current_user.id).all()
+        
+        return render_template('profile.html', profile=profile, user=current_user, 
+                             dashboard_requests=dashboard_requests,
+                             profile_changes=profile_changes)
+    
+    
+    @app.route('/profile/edit', methods=['GET', 'POST'])
+    @login_required
+    def edit_profile():
+        """Edit user profile - submits change requests for admin approval"""
+        profile = UserProfile.query.filter_by(user_id=current_user.id).first()
+        if not profile:
+            profile = UserProfile(user_id=current_user.id)
+            db.session.add(profile)
+            db.session.commit()
+        
+        form = UserProfileForm()
+        if form.validate_on_submit():
+            # Update non-sensitive fields immediately
+            profile.department = form.department.data
+            profile.job_title = form.job_title.data
+            profile.office_location = form.office_location.data
+            profile.theme = form.theme.data
+            profile.notifications_enabled = int(form.notifications_enabled.data)
+            
+            # Create change requests for sensitive fields
+            fields_to_check = {
+                'full_name': (form.full_name.data, current_user.full_name),
+                'phone': (form.phone.data, profile.phone)
+            }
+            
+            for field_name, (new_val, old_val) in fields_to_check.items():
+                if new_val and new_val != old_val:
+                    change_req = ProfileChangeRequest(
+                        user_id=current_user.id,
+                        field_name=field_name,
+                        old_value=old_val,
+                        new_value=new_val
+                    )
+                    db.session.add(change_req)
+            
+            db.session.commit()
+            flash('Profile updated! Changes requiring approval have been submitted for admin review.', 'success')
+            return redirect(url_for('user_profile'))
+        elif request.method == 'GET':
+            form.full_name.data = current_user.full_name
+            form.phone.data = profile.phone
+            form.department.data = profile.department
+            form.job_title.data = profile.job_title
+            form.office_location.data = profile.office_location
+            form.theme.data = profile.theme
+            form.notifications_enabled.data = profile.notifications_enabled
+        
+        return render_template('edit_profile.html', form=form, profile=profile)
+    
+    
+    # ==================== DASHBOARD ACCESS ROUTES ====================
+    
+    @app.route('/dashboard/access/request', methods=['GET', 'POST'])
+    @login_required
+    def request_dashboard_access():
+        """User requests access to Power BI dashboard"""
+        # Check if user already has access
+        profile = UserProfile.query.filter_by(user_id=current_user.id).first()
+        if profile and profile.can_view_dashboard:
+            flash('You already have dashboard access!', 'info')
+            return redirect(url_for('view_dashboard'))
+        
+        # Check if request is already pending
+        existing_request = DashboardAccessRequest.query.filter_by(
+            user_id=current_user.id,
+            status='pending'
+        ).first()
+        
+        form = DashboardAccessRequestForm()
+        if form.validate_on_submit():
+            if existing_request:
+                flash('You already have a pending dashboard access request.', 'warning')
+                return redirect(url_for('user_profile'))
+            
+            access_request = DashboardAccessRequest(
+                user_id=current_user.id,
+                status='pending'
+            )
+            db.session.add(access_request)
+            db.session.commit()
+            flash('✓ Dashboard access request submitted! An admin will review your request shortly.', 'success')
+            return redirect(url_for('user_profile'))
+        
+        return render_template('request_dashboard_access.html', form=form, existing_request=existing_request)
+    
+    
+    @app.route('/dashboard')
+    @login_required
+    def view_dashboard():
+        """View Power BI dashboard (restricted access)"""
+        profile = UserProfile.query.filter_by(user_id=current_user.id).first()
+        
+        if not profile or not profile.can_view_dashboard:
+            flash('You do not have access to the dashboard. Please request access from the admin.', 'danger')
+            return redirect(url_for('request_dashboard_access'))
+        
+        return render_template('view_dashboard.html', profile=profile)
+    
+    
+    # ==================== ADMIN ROUTES ====================
+    
+    def is_admin(user):
+        """Check if user is admin"""
+        profile = UserProfile.query.filter_by(user_id=user.id).first()
+        return profile and profile.role == 'admin'
+    
+    
+    @app.route('/admin/dashboard')
+    @login_required
+    def admin_dashboard():
+        """Admin panel - view all pending requests"""
+        if not is_admin(current_user):
+            flash('You do not have permission to access the admin panel.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        pending_access_requests = DashboardAccessRequest.query.filter_by(status='pending').all()
+        pending_profile_changes = ProfileChangeRequest.query.filter_by(status='pending').all()
+        
+        approved_users = User.query.filter(
+            User.id.in_(
+                db.session.query(UserProfile.user_id).filter(UserProfile.can_view_dashboard == 1)
+            )
+        ).all()
+        
+        return render_template('admin_dashboard.html',
+                             access_requests=pending_access_requests,
+                             profile_changes=pending_profile_changes,
+                             approved_users=approved_users)
+    
+    
+    @app.route('/admin/access-request/<int:request_id>/approve', methods=['POST'])
+    @login_required
+    def approve_dashboard_access(request_id):
+        """Admin approves dashboard access request"""
+        if not is_admin(current_user):
+            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        
+        access_request = DashboardAccessRequest.query.get_or_404(request_id)
+        
+        access_request.status = 'approved'
+        access_request.approved_by_id = current_user.id
+        access_request.approved_at = datetime.utcnow()
+        
+        profile = UserProfile.query.filter_by(user_id=access_request.user_id).first()
+        if not profile:
+            profile = UserProfile(user_id=access_request.user_id)
+        profile.can_view_dashboard = 1
+        profile.dashboard_access_approved_at = datetime.utcnow()
+        
+        db.session.add(access_request)
+        db.session.add(profile)
+        db.session.commit()
+        
+        flash(f'✓ Dashboard access approved for user {access_request.user.email}', 'success')
+        return redirect(url_for('admin_dashboard'))
+    
+    
+    @app.route('/admin/access-request/<int:request_id>/reject', methods=['POST'])
+    @login_required
+    def reject_dashboard_access(request_id):
+        """Admin rejects dashboard access request"""
+        if not is_admin(current_user):
+            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        
+        access_request = DashboardAccessRequest.query.get_or_404(request_id)
+        reason = request.form.get('reason', 'No reason provided')
+        
+        access_request.status = 'rejected'
+        access_request.approved_by_id = current_user.id
+        access_request.approved_at = datetime.utcnow()
+        access_request.rejection_reason = reason
+        
+        db.session.commit()
+        
+        flash(f'Dashboard access request rejected for user {access_request.user.email}', 'warning')
+        return redirect(url_for('admin_dashboard'))
+    
+    
+    @app.route('/admin/profile-change/<int:change_id>/approve', methods=['POST'])
+    @login_required
+    def approve_profile_change(change_id):
+        """Admin approves profile change request"""
+        if not is_admin(current_user):
+            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        
+        change_request = ProfileChangeRequest.query.get_or_404(change_id)
+        
+        # Apply the change to user or profile
+        user = change_request.user
+        field_name = change_request.field_name
+        
+        if field_name == 'full_name':
+            user.full_name = change_request.new_value
+        else:
+            profile = UserProfile.query.filter_by(user_id=user.id).first()
+            if profile:
+                setattr(profile, field_name, change_request.new_value)
+        
+        change_request.status = 'approved'
+        change_request.reviewed_by_id = current_user.id
+        change_request.reviewed_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        flash(f'✓ Profile change approved for {user.email}', 'success')
+        return redirect(url_for('admin_dashboard'))
+    
+    
+    @app.route('/admin/profile-change/<int:change_id>/reject', methods=['POST'])
+    @login_required
+    def reject_profile_change(change_id):
+        """Admin rejects profile change request"""
+        if not is_admin(current_user):
+            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+        
+        change_request = ProfileChangeRequest.query.get_or_404(change_id)
+        reason = request.form.get('reason', 'No reason provided')
+        
+        change_request.status = 'rejected'
+        change_request.reviewed_by_id = current_user.id
+        change_request.reviewed_at = datetime.utcnow()
+        change_request.rejection_reason = reason
+        
+        db.session.commit()
+        
+        flash(f'Profile change rejected for {change_request.user.email}', 'warning')
+        return redirect(url_for('admin_dashboard'))
+    
+    
+    # ==================== API ENDPOINTS FOR AUTOCOMPLETE ====================
+    
+    @app.route('/api/autocomplete/departments')
+    @login_required
+    def autocomplete_departments():
+        """Get list of departments for autocomplete"""
+        departments = db.session.query(UserProfile.department).distinct().filter(
+            UserProfile.department != None
+        ).all()
+        departments = [d[0] for d in departments if d[0]]
+        return jsonify(departments)
+    
+    
+    @app.route('/api/autocomplete/job-titles')
+    @login_required
+    def autocomplete_job_titles():
+        """Get list of job titles for autocomplete"""
+        titles = db.session.query(UserProfile.job_title).distinct().filter(
+            UserProfile.job_title != None
+        ).all()
+        titles = [t[0] for t in titles if t[0]]
+        return jsonify(titles)
+    
+    
+    @app.route('/api/autocomplete/office-locations')
+    @login_required
+    def autocomplete_office_locations():
+        """Get list of office locations for autocomplete"""
+        locations = db.session.query(UserProfile.office_location).distinct().filter(
+            UserProfile.office_location != None
+        ).all()
+        locations = [l[0] for l in locations if l[0]]
+        return jsonify(locations)
     
     
     # Error handlers

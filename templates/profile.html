@@ -83,9 +83,6 @@
                         <strong>You have access to the Power BI Report</strong>
                         <p class="mb-0">Approved on: {{ current_user.reports_approved_date.strftime('%B %d, %Y') if current_user.reports_approved_date else 'Approved' }}</p>
                     </div>
-                    <a href="{{ url_for('view_powerbi_report') }}" class="btn btn-danger">
-                        <i class="fas fa-file-pdf"></i> View Report
-                    </a>
                 {% else %}
                     <div class="alert alert-warning">
                         <i class="fas fa-info-circle"></i>
@@ -116,6 +113,9 @@
                         </div>
                     {% endif %}
                 {% endif %}
+                <a href="{{ url_for('view_powerbi_report') }}" class="btn btn-danger" style="margin-top: 15px;">
+                    <i class="fas fa-file-pdf"></i> View Report
+                </a>
             </div>
         </div>
         <!-- Pending Changes Card -->

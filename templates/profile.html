@@ -118,7 +118,62 @@
                 {% endif %}
             </div>
         </div>
-
+        <!-- Power BI Report Access Card -->
+        <div class="card report-card animate-slide-up" style="animation-delay: 0.15s;">
+            <div class="card-header">
+                <h2>Power BI Report Access</h2>
+                {% if current_user.can_view_reports %}
+                    <span class="badge badge-success">
+                        <i class="fas fa-check-circle"></i> Approved
+                    </span>
+                {% else %}
+                    <a href="{{ url_for('request_report_access') }}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-file-pdf"></i> Request Access
+                    </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if current_user.can_view_reports %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <strong>You have access to the Power BI Report</strong>
+                        <p class="mb-0">Approved on: {{ current_user.reports_approved_date.strftime('%B %d, %Y') if current_user.reports_approved_date else 'Approved' }}</p>
+                    </div>
+                    <a href="{{ url_for('view_powerbi_report') }}" class="btn btn-danger">
+                        <i class="fas fa-file-pdf"></i> View Report
+                    </a>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Power BI Report access not yet approved</strong>
+                        <p class="mb-0">Click "Request Access" to submit a request to the admin.</p>
+                    </div>
+                    
+                    {% if report_requests %}
+                        <div class="request-status mt-3">
+                            <h5>Your Access Requests:</h5>
+                            <div class="request-list">
+                                {% for req in report_requests %}
+                                    <div class="request-item">
+                                        <span class="request-date">{{ req.requested_at.strftime('%B %d, %Y') }}</span>
+                                        {% if req.status == 'pending' %}
+                                            <span class="badge badge-warning">Pending</span>
+                                        {% elif req.status == 'approved' %}
+                                            <span class="badge badge-success">Approved</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">Rejected</span>
+                                            {% if req.rejection_reason %}
+                                                <p class="reason">{{ req.rejection_reason }}</p>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
         <!-- Pending Changes Card -->
         {% if profile_changes %}
             <div class="card changes-card animate-slide-up" style="animation-delay: 0.2s;">

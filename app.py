@@ -622,10 +622,12 @@ def create_app():
             db.session.commit()
         
         dashboard_requests = DashboardAccessRequest.query.filter_by(user_id=current_user.id).all()
+        report_requests = ReportAccessRequest.query.filter_by(user_id=current_user.id).all()
         profile_changes = ProfileChangeRequest.query.filter_by(user_id=current_user.id).all()
         
         return render_template('profile.html', profile=profile, user=current_user, 
                              dashboard_requests=dashboard_requests,
+                             report_requests=report_requests,
                              profile_changes=profile_changes)
     
     

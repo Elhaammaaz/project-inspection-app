@@ -816,6 +816,17 @@ def create_app():
         return redirect(url_for('access_management'))
     
     
+    @app.route('/dashboard/powerbi')
+    @login_required
+    def view_powerbi_dashboard():
+        """View Power BI dashboard - requires dashboard access"""
+        if not current_user.can_view_dashboard:
+            flash('You do not have permission to access the dashboard.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        return render_template('powerbi_dashboard.html')
+    
+    
     @app.route('/admin/access-request/<int:request_id>/approve', methods=['POST'])
     @login_required
     def approve_dashboard_access(request_id):

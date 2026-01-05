@@ -157,8 +157,57 @@
             {% endif %}
         </div>
 
-        <!-- Approved Users List -->
+        <!-- Dashboard Access Approval -->
         <div class="section animate-slide-up" style="animation-delay: 0.5s;">
+            <div class="section-header">
+                <h2>Building Assessment Report Dashboard</h2>
+                <span class="badge badge-info">Analytics & Reports</span>
+            </div>
+
+            <div class="dashboard-access-card">
+                <div class="dashboard-info">
+                    <i class="fas fa-chart-pie dashboard-icon"></i>
+                    <div class="dashboard-details">
+                        <h4>Power BI Dashboard Access</h4>
+                        <p>View comprehensive building assessment analytics, inspection reports, and system performance metrics.</p>
+                        <div class="dashboard-stats">
+                            <span class="stat-item">
+                                <i class="fas fa-check-circle"></i>
+                                <strong>{{ approved_users|length }}</strong> Users with Access
+                            </span>
+                            <span class="stat-item">
+                                <i class="fas fa-chart-bar"></i>
+                                <strong>Real-time</strong> Analytics
+                            </span>
+                            <span class="stat-item">
+                                <i class="fas fa-building"></i>
+                                <strong>Projects</strong> Monitored
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-actions">
+                    {% if current_user.can_view_dashboard %}
+                        <a href="{{ url_for('view_powerbi_dashboard') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-eye"></i> View Dashboard
+                        </a>
+                        <p class="access-note">
+                            <i class="fas fa-check-circle" style="color: #28a745;"></i> You have access to the dashboard
+                        </p>
+                    {% else %}
+                        <button class="btn btn-secondary btn-lg" disabled>
+                            <i class="fas fa-lock"></i> Access Denied
+                        </button>
+                        <p class="access-note denied">
+                            <i class="fas fa-times-circle" style="color: #dc3545;"></i> You don't have dashboard access
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Approved Users List -->
+        <div class="section animate-slide-up" style="animation-delay: 0.6s;">
             <div class="section-header">
                 <h2>Users with Dashboard Access</h2>
                 <span class="badge badge-success">{{ approved_users|length }} Users</span>
@@ -668,6 +717,110 @@
         animation: slideUp 0.4s ease-out forwards;
     }
 
+    /* Dashboard Access Card */
+    .dashboard-access-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 40px;
+        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .dashboard-access-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(102, 126, 234, 0.3);
+    }
+
+    .dashboard-info {
+        display: flex;
+        gap: 20px;
+        flex: 1;
+        align-items: flex-start;
+    }
+
+    .dashboard-icon {
+        font-size: 3rem;
+        opacity: 0.9;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .dashboard-details h4 {
+        margin: 0 0 10px 0;
+        font-size: 1.3rem;
+    }
+
+    .dashboard-details p {
+        margin: 0 0 15px 0;
+        opacity: 0.95;
+        line-height: 1.5;
+    }
+
+    .dashboard-stats {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+
+    .stat-item i {
+        font-size: 1.1rem;
+    }
+
+    .dashboard-actions {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .dashboard-actions .btn {
+        padding: 12px 30px;
+        font-size: 1rem;
+        border: none;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .dashboard-actions .btn-primary {
+        background-color: white;
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    .dashboard-actions .btn-primary:hover {
+        background-color: #f0f0f0;
+        transform: scale(1.05);
+    }
+
+    .dashboard-actions .btn-secondary {
+        background-color: rgba(255, 255, 255, 0.3);
+        color: white;
+        cursor: not-allowed;
+    }
+
+    .access-note {
+        margin: 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .access-note.denied {
+        color: #ffcccc;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .admin-title {
@@ -676,6 +829,30 @@
 
         .stats-grid {
             grid-template-columns: 1fr;
+        }
+
+        .dashboard-access-card {
+            flex-direction: column;
+            padding: 25px;
+            gap: 25px;
+        }
+
+        .dashboard-info {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .dashboard-icon {
+            font-size: 2.5rem;
+        }
+
+        .dashboard-stats {
+            justify-content: center;
+        }
+
+        .dashboard-actions {
+            width: 100%;
         }
 
         .request-header,

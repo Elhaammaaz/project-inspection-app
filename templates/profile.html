@@ -62,62 +62,6 @@
             </div>
         </div>
 
-        <!-- Dashboard Access Card -->
-        <div class="card dashboard-card animate-slide-up" style="animation-delay: 0.1s;">
-            <div class="card-header">
-                <h2>Dashboard Access</h2>
-                {% if profile.can_view_dashboard %}
-                    <span class="badge badge-success">
-                        <i class="fas fa-check-circle"></i> Approved
-                    </span>
-                {% else %}
-                    <a href="{{ url_for('request_dashboard_access') }}" class="btn btn-info btn-sm">
-                        <i class="fas fa-chart-pie"></i> Request Access
-                    </a>
-                {% endif %}
-            </div>
-            <div class="card-body">
-                {% if profile.can_view_dashboard %}
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <strong>You have access to the Power BI dashboard</strong>
-                        <p class="mb-0">Approved on: {{ profile.dashboard_access_approved_at.strftime('%B %d, %Y %H:%M') }}</p>
-                    </div>
-                    <a href="{{ url_for('view_dashboard') }}" class="btn btn-success">
-                        <i class="fas fa-chart-pie"></i> View Dashboard
-                    </a>
-                {% else %}
-                    <div class="alert alert-warning">
-                        <i class="fas fa-info-circle"></i>
-                        <strong>Dashboard access not yet approved</strong>
-                        <p class="mb-0">Click "Request Access" to submit a request to the admin.</p>
-                    </div>
-                    
-                    {% if dashboard_requests %}
-                        <div class="request-status mt-3">
-                            <h5>Your Access Requests:</h5>
-                            <div class="request-list">
-                                {% for req in dashboard_requests %}
-                                    <div class="request-item">
-                                        <span class="request-date">{{ req.requested_at.strftime('%B %d, %Y') }}</span>
-                                        {% if req.status == 'pending' %}
-                                            <span class="badge badge-warning">Pending</span>
-                                        {% elif req.status == 'approved' %}
-                                            <span class="badge badge-success">Approved</span>
-                                        {% else %}
-                                            <span class="badge badge-danger">Rejected</span>
-                                            {% if req.rejection_reason %}
-                                                <p class="reason">{{ req.rejection_reason }}</p>
-                                            {% endif %}
-                                        {% endif %}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endif %}
-                {% endif %}
-            </div>
-        </div>
         <!-- Power BI Report Access Card -->
         <div class="card report-card animate-slide-up" style="animation-delay: 0.15s;">
             <div class="card-header">

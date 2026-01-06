@@ -16,7 +16,7 @@
                     <i class="fas fa-cog"></i> Admin Panel
                 </a>
                 {% endif %}
-                <a href="{{ url_for('create_inspection') }}" class="btn btn-primary btn-lg">+ New Inspection</a>
+                <a href="{{ url_for('new_inspection') }}" class="btn btn-primary btn-lg">+ New Inspection</a>
             </div>
         </div>
     </div>
@@ -167,7 +167,7 @@
         <div class="card-body text-center py-5">
             <h5 class="card-title">No projects yet</h5>
             <p class="card-text text-muted">You haven't created any project inspections yet.</p>
-            <a href="{{ url_for('create_inspection') }}" class="btn btn-primary">Create First Inspection</a>
+            <a href="{{ url_for('new_inspection') }}" class="btn btn-primary">Create First Inspection</a>
         </div>
     </div>
 {% endif %}

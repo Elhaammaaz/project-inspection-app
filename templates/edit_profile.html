@@ -46,14 +46,14 @@
             <label for="department">Department</label>
             <div class="autocomplete-wrapper">
                 {% if form.department.errors %}
-                    {{ form.department(class="form-control is-invalid autocomplete-input", autocomplete="off", data_api="{{ url_for('autocomplete_departments') }}") }}
+                    {{ form.department(class="form-control is-invalid") }}
                     <div class="invalid-feedback">
                         {% for error in form.department.errors %}
                             <span>{{ error }}</span>
                         {% endfor %}
                     </div>
                 {% else %}
-                    {{ form.department(class="form-control autocomplete-input", autocomplete="off", data_api="{{ url_for('autocomplete_departments') }}") }}
+                    {{ form.department(class="form-control") }}
                 {% endif %}
                 <ul class="autocomplete-list"></ul>
             </div>
@@ -63,14 +63,14 @@
             <label for="job_title">Job Title</label>
             <div class="autocomplete-wrapper">
                 {% if form.job_title.errors %}
-                    {{ form.job_title(class="form-control is-invalid autocomplete-input", autocomplete="off", data_api="{{ url_for('autocomplete_job_titles') }}") }}
+                    {{ form.job_title(class="form-control is-invalid") }}
                     <div class="invalid-feedback">
                         {% for error in form.job_title.errors %}
                             <span>{{ error }}</span>
                         {% endfor %}
                     </div>
                 {% else %}
-                    {{ form.job_title(class="form-control autocomplete-input", autocomplete="off", data_api="{{ url_for('autocomplete_job_titles') }}") }}
+                    {{ form.job_title(class="form-control") }}
                 {% endif %}
                 <ul class="autocomplete-list"></ul>
             </div>

@@ -64,11 +64,11 @@
                         </small>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">{{ form.item_count.label }}</label>
-                        {{ form.item_count(class="form-control" + (" is-invalid" if form.item_count.errors else "")) }}
-                        {% if form.item_count.errors %}
+                        <label class="form-label">{{ form.system_type.label }}</label>
+                        {{ form.system_type(class="form-control" + (" is-invalid" if form.system_type.errors else "")) }}
+                        {% if form.system_type.errors %}
                             <div class="invalid-feedback d-block">
-                                {{ form.item_count.errors[0] }}
+                                {{ form.system_type.errors[0] }}
                             </div>
                         {% endif %}
                     </div>
@@ -79,47 +79,53 @@
         <!-- Performance Metrics -->
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Performance Metrics</h5>
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Condition & Maintenance</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">{{ form.score_percentage.label }}</label>
-                        {{ form.score_percentage(class="form-control" + (" is-invalid" if form.score_percentage.errors else ""), placeholder="0-100") }}
-                        {% if form.score_percentage.errors %}
+                        <label class="form-label">{{ form.condition_rating.label }}</label>
+                        {{ form.condition_rating(class="form-select" + (" is-invalid" if form.condition_rating.errors else "")) }}
+                        {% if form.condition_rating.errors %}
                             <div class="invalid-feedback d-block">
-                                {{ form.score_percentage.errors[0] }}
+                                {{ form.condition_rating.errors[0] }}
                             </div>
                         {% endif %}
-                        <small class="form-text text-muted">Enter score as 0-100 (e.g., 54, 73, 78)</small>
+                        <small class="form-text text-muted">Rate the current condition of the system</small>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">{{ form.weight.label }}</label>
-                        {{ form.weight(class="form-control" + (" is-invalid" if form.weight.errors else ""), placeholder="0.00") }}
-                        {% if form.weight.errors %}
+                        <label class="form-label">{{ form.last_maintenance.label }}</label>
+                        {{ form.last_maintenance(class="form-control" + (" is-invalid" if form.last_maintenance.errors else ""), type="date") }}
+                        {% if form.last_maintenance.errors %}
                             <div class="invalid-feedback d-block">
-                                {{ form.weight.errors[0] }}
+                                {{ form.last_maintenance.errors[0] }}
                             </div>
                         {% endif %}
-                        <small class="form-text text-muted">Weight of this system in overall score (e.g., 17.00, 10.00)</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">{{ form.maintenance_notes.label }}</label>
+                        {{ form.maintenance_notes(class="form-control" + (" is-invalid" if form.maintenance_notes.errors else "")) }}
+                        {% if form.maintenance_notes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.maintenance_notes.errors[0] }}
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">{{ form.weighted_score.label }}</label>
-                        {{ form.weighted_score(class="form-control" + (" is-invalid" if form.weighted_score.errors else ""), placeholder="0.00") }}
-                        {% if form.weighted_score.errors %}
+                        <label class="form-label">{{ form.next_maintenance.label }}</label>
+                        {{ form.next_maintenance(class="form-control" + (" is-invalid" if form.next_maintenance.errors else ""), type="date") }}
+                        {% if form.next_maintenance.errors %}
                             <div class="invalid-feedback d-block">
-                                {{ form.weighted_score.errors[0] }}
+                                {{ form.next_maintenance.errors[0] }}
                             </div>
                         {% endif %}
-                        <small class="form-text text-muted">Calculated as: Score % × Weight ÷ 100</small>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">{{ form.status.label }}</label>
-                        {{ form.status(class="form-select") }}
-                        <small class="form-text text-muted">System health status</small>
+                        <small class="form-text text-muted">Scheduled next maintenance date</small>
                     </div>
                 </div>
             </div>
@@ -177,17 +183,6 @@
             });
         }, false);
     })();
-    
-    // Auto-calculate weighted score
-    document.getElementById('score_percentage').addEventListener('change', calculateWeightedScore);
-    document.getElementById('weight').addEventListener('change', calculateWeightedScore);
-    
-    function calculateWeightedScore() {
-        const score = parseFloat(document.getElementById('score_percentage').value) || 0;
-        const weight = parseFloat(document.getElementById('weight').value) || 0;
-        const weightedScore = (score * weight / 100).toFixed(2);
-        document.getElementById('weighted_score').value = weightedScore;
-    }
 </script>
 
 <style>

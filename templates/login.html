@@ -1,13 +1,16 @@
 {% extends 'base.html' %}
 
-{% block title %}Login - Checklist App{% endblock %}
+{% block title %}Login - Asset Management | Dar Al Riyadh{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center align-items-center" style="min-height: 60vh;">
     <div class="col-12 col-sm-10 col-md-8 col-lg-5">
         <div class="card">
             <div class="card-body p-4 p-md-5">
-                <h2 class="card-title text-center mb-4">Sign In</h2>
+                <h2 class="card-title text-center mb-4">
+                    <i class="fas fa-building" style="color: #2c5f8d;"></i> Asset Management
+                </h2>
+                <p class="text-center text-muted mb-4">Dar Al Riyadh</p>
                 
                 <form method="POST" action="{{ url_for('login') }}" novalidate>
                     {{ form.hidden_tag() }}

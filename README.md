@@ -1,27 +1,28 @@
-# Project Inspection Management System
+# Asset Management System - Dar Al Riyadh
 
-A professional, production-ready Flask web application for managing comprehensive project inspections. Features user authentication, responsive mobile-friendly design, SQLite database persistence, and extensive inspection documentation fields.
+A professional, production-ready Flask web application for managing comprehensive asset inspections and maintenance tracking. Built for Dar Al Riyadh to streamline facility and building asset management with user authentication, responsive design, and extensive documentation fields.
 
 ## Features
 
-- ✓ User registration and authentication (Flask-Login)
-- ✓ Create, read, update, and delete project inspections
-- ✓ Comprehensive project information capture:
-  - Project details (name, city, address, GPS coordinates)
+- ✓ User registration and authentication (Flask-Login) with admin approval system
+- ✓ Create, read, update, and delete asset inspections
+- ✓ Comprehensive asset information capture:
+  - Asset details (name, city, address, GPS coordinates)
   - Building information (type, use, area, floors)
   - Timeline and dates (construction year, renovation date, inspection date)
   - Management details (FM contractor, system threshold)
   - Assessment results (inspection result, compliance status)
   - Performance metrics (building score, FM performance, fire safety rating)
   - Life expectancy calculations (economic life, effective age, remaining life)
+- ✓ Building systems tracking (21 systems with maintenance schedules)
 - ✓ Notes and additional comments for each inspection
-- ✓ Dashboard with project overview (table view on desktop, cards on mobile)
-- ✓ Detailed project view with all information displayed
+- ✓ Admin dashboard for user management
+- ✓ Detailed asset view with all information displayed
 - ✓ Responsive design (mobile and desktop optimized)
-- ✓ Bootstrap 5 UI with professional styling
+- ✓ Dar Al Riyadh branded UI with professional styling
 - ✓ SQLite database with SQLAlchemy ORM
 - ✓ Complete form validation with Flask-WTF
-- ✓ Pagination support for large project lists
+- ✓ API endpoints for data retrieval
 
 ## Requirements
 
@@ -36,7 +37,7 @@ A professional, production-ready Flask web application for managing comprehensiv
 
 1. **Clone or navigate to the project directory:**
    ```bash
-   cd checklist_app
+   cd asset-management
    ```
 
 2. **Create a virtual environment:**

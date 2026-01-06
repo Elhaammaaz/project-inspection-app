@@ -1,14 +1,16 @@
 {% extends 'base.html' %}
 
-{% block title %}Register - Checklist App{% endblock %}
+{% block title %}Register - Asset Management | Dar Al Riyadh{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center align-items-center" style="min-height: 60vh;">
     <div class="col-12 col-sm-10 col-md-8 col-lg-5">
         <div class="card">
             <div class="card-body p-4 p-md-5">
-                <h2 class="card-title text-center mb-2">Create Account</h2>
-                <p class="text-center text-muted mb-4">Request a new account (requires admin approval)</p>
+                <h2 class="card-title text-center mb-2">
+                    <i class="fas fa-user-plus" style="color: #2c5f8d;"></i> Create Account
+                </h2>
+                <p class="text-center text-muted mb-4">Join Asset Management System (requires admin approval)</p>
                 
                 <form method="POST" action="{{ url_for('register') }}" novalidate>
                     {{ form.hidden_tag() }}

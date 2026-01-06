@@ -143,133 +143,33 @@ class ProjectInspectionForm(FlaskForm):
 class InspectionSystemForm(FlaskForm):
     """Form for adding/editing individual building system"""
     
-    # 21 building systems as dropdown
-    SYSTEMS = [
-        ('Fire_LifeSafety', 'Fire & Life Safety'),
-        ('Electrical', 'Electrical'),
-        ('Emergency_Power', 'Emergency Power'),
-        ('Mechanical_HVAC', 'Mechanical HVAC'),
-        ('Plumbing_Water', 'Plumbing & Water'),
-        ('Gas_Systems', 'Gas Systems'),
-        ('Vertical_Transportation', 'Vertical Transportation'),
-        ('BMS_Controls', 'BMS Controls'),
-        ('ELV_Systems', 'ELV Systems'),
-        ('Security_Safety', 'Security & Safety'),
-        ('Digital_ICT', 'Digital & ICT'),
-        ('Structural', 'Structural'),
-        ('Architectural_Fabric', 'Architectural Fabric'),
-        ('External_Parking', 'External Parking'),
-        ('Landscape', 'Landscape'),
-        ('Pools_WaterFeatures', 'Pools & Water Features'),
-        ('Waste_Management', 'Waste Management'),
-        ('Sustainability', 'Sustainability'),
-        ('Compliance_Documentation', 'Compliance & Documentation'),
-        ('FM_Performance', 'FM Performance'),
-        ('Governance_Readiness', 'Governance & Readiness'),
-    ]
+    system_name = StringField('System Name', validators=[
+        DataRequired(message='System name is required'),
+        Length(min=1, max=255)
+    ], render_kw={'placeholder': 'e.g., Electrical, HVAC, Plumbing'})
     
-    system_name = SelectField('System Name', choices=SYSTEMS, validators=[
-        DataRequired(message='System name is required')
-    ])
+    system_type = StringField('System Type', validators=[
+        Optional(),
+        Length(max=255)
+    ], render_kw={'placeholder': 'e.g., Distribution Panel, Cooling Unit'})
     
-    item_count = IntegerField('Item Count', validators=[
-        DataRequired(message='Item count is required'),
-        NumberRange(min=0, message='Item count must be positive')
-    ], render_kw={'placeholder': 'Number of items inspected'})
-    
-    score_percentage = FloatField('Score (%)', validators=[
-        DataRequired(message='Score percentage is required'),
-        NumberRange(min=0, max=100, message='Score must be between 0 and 100')
-    ], render_kw={'placeholder': 'e.g., 54, 73, 78'})
-    
-    weight = FloatField('Weight', validators=[
-        DataRequired(message='Weight is required'),
-        NumberRange(min=0, message='Weight must be positive')
-    ], render_kw={'placeholder': 'e.g., 17.00, 10.00, 2.00'})
-    
-    weighted_score = FloatField('Weighted Score', validators=[
-        DataRequired(message='Weighted score is required'),
-        NumberRange(min=0, message='Weighted score must be positive')
-    ], render_kw={'placeholder': 'e.g., 9, 7, 2'})
-    
-    status = SelectField('Status', choices=[
-        ('', '-- Select Status --'),
-        ('Critical', 'Critical'),
-        ('Warning', 'Warning'),
-        ('Good', 'Good')
+    condition_rating = SelectField('Condition Rating', choices=[
+        ('', '-- Select Rating --'),
+        ('Excellent', 'Excellent'),
+        ('Good', 'Good'),
+        ('Fair', 'Fair'),
+        ('Poor', 'Poor'),
+        ('Critical', 'Critical')
     ], validators=[Optional()])
     
+    last_maintenance = DateField('Last Maintenance Date', validators=[Optional()], format='%Y-%m-%d')
+    
+    maintenance_notes = TextAreaField('Maintenance Notes', validators=[
+        Optional(),
+        Length(max=500)
+    ], render_kw={'rows': 3, 'placeholder': 'Any relevant maintenance notes'})
+    
+    next_maintenance = DateField('Next Maintenance Date', validators=[Optional()], format='%Y-%m-%d')
+    
     submit = SubmitField('Save System')
-
-
-class UserProfileForm(FlaskForm):
-    """User profile information form with data that may require admin approval"""
-    
-    full_name = StringField('Full Name', validators=[
-        DataRequired(message='Full name is required'),
-        Length(min=2, max=255, message='Name must be between 2 and 255 characters')
-    ], render_kw={'placeholder': 'Your full name'})
-    
-    phone = StringField('Phone Number', validators=[
-        Optional(),
-        Length(min=7, max=20, message='Phone number must be between 7 and 20 characters')
-    ], render_kw={'placeholder': '+966 XX XXX XXXX'})
-    
-    department = StringField('Department', validators=[
-        Optional(),
-        Length(max=255)
-    ], render_kw={'placeholder': 'e.g., Operations, Finance, IT, Maintenance'})
-    
-    job_title = StringField('Job Title', validators=[
-        Optional(),
-        Length(max=255)
-    ], render_kw={'placeholder': 'e.g., Senior Manager, Inspector, Coordinator'})
-    
-    office_location = StringField('Office Location', validators=[
-        Optional(),
-        Length(max=255)
-    ], render_kw={'placeholder': 'e.g., Riyadh Office, Dubai Branch'})
-    
-    theme = SelectField('Theme Preference', choices=[
-        ('light', 'Light Mode'),
-        ('dark', 'Dark Mode')
-    ], default='light')
-    
-    notifications_enabled = BooleanField('Enable Notifications', default=True)
-    
-    submit = SubmitField('Update Profile')
-
-
-class DashboardAccessRequestForm(FlaskForm):
-    """Form to request dashboard access"""
-    
-    reason = TextAreaField('Reason for Dashboard Access', validators=[
-        DataRequired(message='Please provide a reason'),
-        Length(min=10, max=500, message='Reason must be between 10 and 500 characters')
-    ], render_kw={
-        'rows': 4,
-        'placeholder': 'Explain why you need access to the Power BI dashboard...'
-    })
-    
-    submit = SubmitField('Request Dashboard Access')
-
-
-class ProfileChangeRequestForm(FlaskForm):
-    """Form to request profile changes that need admin approval"""
-    
-    field_name = SelectField('Field to Update', choices=[
-        ('', '-- Select Field --'),
-        ('full_name', 'Full Name'),
-        ('phone', 'Phone Number'),
-        ('department', 'Department'),
-        ('job_title', 'Job Title'),
-        ('office_location', 'Office Location'),
-    ], validators=[DataRequired(message='Please select a field to update')])
-    
-    new_value = TextAreaField('New Value', validators=[
-        DataRequired(message='New value is required'),
-        Length(min=1, max=500, message='New value must be between 1 and 500 characters')
-    ], render_kw={'rows': 3, 'placeholder': 'Enter the new value for this field'})
-    
-    submit = SubmitField('Request Change')
 

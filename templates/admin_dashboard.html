@@ -9,43 +9,7 @@
         <p class="admin-subtitle">Manage access requests and user approvals</p>
     </div>
 
-    <div class="admin-content">
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card animate-slide-up">
-                <div class="stat-icon pending">
-                    <i class="fas fa-hourglass-half"></i>
-                </div>
-                <div class="stat-info">
-                    <h4>Pending Requests</h4>
-                    <p class="stat-value">{{ access_requests|length }}</p>
-                </div>
-            </div>
-
-            <div class="stat-card animate-slide-up" style="animation-delay: 0.1s;">
-                <div class="stat-icon changes">
-                    <i class="fas fa-edit"></i>
-                </div>
-                <div class="stat-info">
-                    <h4>Profile Changes</h4>
-                    <p class="stat-value">{{ profile_changes|length }}</p>
-                </div>
-            </div>
-
-            <div class="stat-card animate-slide-up" style="animation-delay: 0.2s;">
-                <div class="stat-icon approved">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="stat-info">
-                    <h4>Approved Users</h4>
-                    <p class="stat-value">{{ approved_users|length }}</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dashboard Access Requests -->
-        <div class="section animate-slide-up" style="animation-delay: 0.3s;">
-            <div class="section-header">
+            <!-- Dashboard Access Requests Section removed -->
                 <h2>Dashboard Access Requests</h2>
                 {% if access_requests|length == 0 %}
                     <span class="badge badge-success">All Caught Up</span>
@@ -59,45 +23,7 @@
                     {% for request in access_requests %}
                         <div class="request-card animate-item">
                             <div class="request-header">
-                                <div class="request-user">
-                                    <h4>{{ request.user.email }}</h4>
-                                    <p class="user-name">{{ request.user.full_name or 'User' }}</p>
-                                </div>
-                                <div class="request-date">
-                                    <small>{{ request.requested_at.strftime('%B %d, %Y') }}</small>
-                                </div>
-                            </div>
-
-                            <div class="request-body">
-                                <p class="request-status">
-                                    <strong>Status:</strong> <span class="badge badge-warning">Pending</span>
-                                </p>
-                            </div>
-
-                            <div class="request-actions">
-                                <form method="POST" action="{{ url_for('approve_dashboard_access', request_id=request.id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-success btn-sm">
-                                        <i class="fas fa-check"></i> Approve
-                                    </button>
-                                </form>
-
-                                <button class="btn btn-danger btn-sm" onclick="showRejectModal({{ request.id }})">
-                                    <i class="fas fa-times"></i> Reject
-                                </button>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <p>No pending dashboard access requests</p>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- Profile Change Requests -->
-        <div class="section animate-slide-up" style="animation-delay: 0.4s;">
+            <!-- Power BI Report Access Requests Section removed -->
             <div class="section-header">
                 <h2>Profile Change Requests</h2>
                 {% if profile_changes|length == 0 %}

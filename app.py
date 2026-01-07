@@ -9,7 +9,7 @@ from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from config import config as config_dict
 import os
-from datetime import datetime
+from datetime import datetime, date
 
 from models import (
     db, User, Building, Assessment, AssessmentItem, SystemScore,
@@ -1128,6 +1128,211 @@ def create_app(config_name='development'):
             'new_values': l.new_values,
             'timestamp': l.timestamp.isoformat() if l.timestamp else None
         } for l in logs]})
+    
+    @app.route('/api/seed-sample-data')
+    def api_seed_sample_data():
+        """Seed sample data for Power BI testing"""
+        import random
+        from datetime import timedelta
+        
+        try:
+            # Get existing data
+            systems = System.query.all()
+            subsystems = Subsystem.query.all()
+            
+            # Ensure we have a user
+            user = User.query.first()
+            if not user:
+                user = User(username='admin', email='admin@daralriyadh.com', role='Admin', is_active=True)
+                user.set_password('admin123')
+                db.session.add(user)
+                db.session.commit()
+            
+            # Add compliance areas if not exists
+            if ComplianceArea.query.count() == 0:
+                areas = [
+                    ('Civil Defense Approval', 'Fire safety compliance', 'CD-001'),
+                    ('Municipality License', 'Building permit compliance', 'MUN-001'),
+                    ('Electricity Approval', 'Electrical compliance', 'SEC-001'),
+                    ('Water Authority', 'Water systems compliance', 'NWC-001'),
+                    ('Environmental', 'Environmental compliance', 'ENV-001'),
+                ]
+                for name, desc, code in areas:
+                    db.session.add(ComplianceArea(area_name=name, description=desc, regulation_code=code, active=True))
+                db.session.commit()
+            
+            # Add sample buildings
+            buildings_data = [
+                ('King Fahd Medical City', 'BLDG-001', 'Riyadh', 'King Fahd Road', 24.7136, 46.6753, 'Hospital', 'Healthcare', 50000, 10, 1995),
+                ('Al Faisaliah Tower', 'BLDG-002', 'Riyadh', 'King Fahd Road', 24.6908, 46.6855, 'Commercial', 'Office', 120000, 44, 2000),
+                ('Kingdom Centre', 'BLDG-003', 'Riyadh', 'Olaya Street', 24.7117, 46.6742, 'Mixed Use', 'Commercial', 185000, 99, 2002),
+            ]
+            
+            buildings = []
+            for name, code, city, addr, lat, lng, btype, use, area, floors, year in buildings_data:
+                existing = Building.query.filter_by(building_code=code).first()
+                if not existing:
+                    b = Building(
+                        project_name=name, building_code=code, city=city, address=addr,
+                        latitude=lat, longitude=lng, building_type=btype, primary_use=use,
+                        gross_built_area_m2=area, number_of_floors=floors, construction_year=year,
+                        inspection_date=date.today(), current_year=2026, system_threshold_percent=75.0,
+                        estimated_life_time_years=50, fm_contractor='Dar Al Riyadh',
+                        created_by_id=user.id, status='InProgress'
+                    )
+                    db.session.add(b)
+                    buildings.append(b)
+                else:
+                    buildings.append(existing)
+            db.session.commit()
+            
+            # Add assessments
+            for b in buildings:
+                if Assessment.query.filter_by(building_id=b.id).count() == 0:
+                    assessment = Assessment(building_id=b.id, assessment_code=f'ASS-{b.building_code}', status='In Progress')
+                    db.session.add(assessment)
+            db.session.commit()
+            
+            # Add assessment items
+            assessments = Assessment.query.all()
+            for assessment in assessments:
+                if AssessmentItem.query.filter_by(assessment_id=assessment.id).count() == 0:
+                    for i in range(5):
+                        system = systems[i % len(systems)] if systems else None
+                        subsystem = Subsystem.query.filter_by(system_id=system.id).first() if system else None
+                        component = Component.query.filter_by(subsystem_id=subsystem.id).first() if subsystem else None
+                        if system and subsystem and component:
+                            rate_val = random.choice([3, 4, 5])
+                            weight_val = random.choice([1.0, 1.5, 2.0])
+                            item = AssessmentItem(
+                                assessment_id=assessment.id, system_id=system.id,
+                                subsystem_id=subsystem.id, component_id=component.id,
+                                item_code=f'ITEM-{assessment.id}-{i+1}',
+                                inspection_item=f'Inspection of {component.component_name}',
+                                criteria='Visual inspection', test_method='Visual',
+                                rate=rate_val, item_weight=weight_val,
+                                risk_criticality=random.randint(1, 5),
+                                priority=random.choice(['P1', 'P2', 'P3', 'P4']),
+                                status=random.choice(['Open', 'In Progress', 'Closed']),
+                                score=rate_val * 20, score_percent=(rate_val * 20) / 100.0,
+                                weighted_score=((rate_val * 20) / 100.0) * weight_val
+                            )
+                            db.session.add(item)
+            db.session.commit()
+            
+            # Add compliance checklists
+            compliance_areas = ComplianceArea.query.all()
+            for b in buildings:
+                if ComplianceChecklist.query.filter_by(building_id=b.id).count() == 0:
+                    checklist = ComplianceChecklist(building_id=b.id, checklist_code=f'CC-{b.building_code}', status='In Progress')
+                    db.session.add(checklist)
+                    db.session.flush()
+                    for i, area in enumerate(compliance_areas[:3]):
+                        item = ComplianceItem(
+                            checklist_id=checklist.id, compliance_area_id=area.id,
+                            item_code=f'CI-{checklist.id}-{i+1}', requirement=f'Compliance with {area.area_name}',
+                            evidence_required=True, status=random.choice(['Yes', 'No', 'Partial']),
+                            evidence_ref=f'DOC-{i+1}', remarks='Reviewed'
+                        )
+                        db.session.add(item)
+            db.session.commit()
+            
+            # Add system scores
+            for b in buildings:
+                for system in systems[:5]:
+                    if SystemScore.query.filter_by(building_id=b.id, system_id=system.id).count() == 0:
+                        score = SystemScore(
+                            building_id=b.id, system_id=system.id,
+                            item_count=random.randint(5, 20), score_percent=random.uniform(70, 95),
+                            weight=random.uniform(5, 15), weighted_score=random.uniform(5, 12)
+                        )
+                        db.session.add(score)
+            db.session.commit()
+            
+            # Add test registers
+            for b in buildings:
+                if TestRegister.query.filter_by(building_id=b.id).count() == 0:
+                    for i, system in enumerate(systems[:3]):
+                        test = TestRegister(
+                            building_id=b.id, system_id=system.id,
+                            test_id=f'TEST-{b.id}-{i+1}', test_name=f'{system.system_name} Test',
+                            standard_reference='ASHRAE/NFPA', instrument='Multi-meter',
+                            acceptance_criteria='Within range', result=random.choice(['Pass', 'Fail', 'Need Attention']),
+                            witness='Engineer', test_date=date.today() - timedelta(days=random.randint(1, 30)),
+                            evidence_ref=f'TEST-DOC-{i+1}', remarks='Completed'
+                        )
+                        db.session.add(test)
+            db.session.commit()
+            
+            # Add CAPA registers
+            responsibilities = Responsibility.query.all()
+            for b in buildings:
+                if CAPARegister.query.filter_by(building_id=b.id).count() == 0:
+                    for i, system in enumerate(systems[:3]):
+                        resp = responsibilities[i % len(responsibilities)] if responsibilities else None
+                        capa = CAPARegister(
+                            building_id=b.id, system_id=system.id,
+                            capa_id=f'CAPA-{b.id}-{i+1}', priority=random.choice(['P1', 'P2', 'P3', 'P4']),
+                            finding=f'Issue in {system.system_name}', required_action='Repair required',
+                            responsibility_id=resp.id if resp else None,
+                            due_date=date.today() + timedelta(days=random.randint(7, 60)),
+                            estimated_cost=random.uniform(5000, 50000),
+                            status=random.choice(['Open', 'In Progress', 'Closed']), remarks='Action needed'
+                        )
+                        db.session.add(capa)
+            db.session.commit()
+            
+            # Add executive dashboard summaries
+            for b in buildings:
+                if ExecutiveDashboardSummary.query.filter_by(building_id=b.id).count() == 0:
+                    dashboard = ExecutiveDashboardSummary(
+                        building_id=b.id, overall_building_score=random.uniform(70, 95),
+                        overall_compliance_percent=random.uniform(75, 98), threshold_pass=True,
+                        total_assessment_items=random.randint(50, 200),
+                        items_open=random.randint(5, 20), items_in_progress=random.randint(10, 30),
+                        items_closed=random.randint(30, 100), items_verified=random.randint(20, 50),
+                        risk_critical=random.randint(0, 3), risk_high=random.randint(2, 8),
+                        risk_medium=random.randint(5, 15), risk_low=random.randint(10, 30),
+                        risk_acceptable=random.randint(20, 50), capa_open=random.randint(2, 10),
+                        capa_in_progress=random.randint(3, 8), capa_closed=random.randint(10, 30),
+                        capa_overdue=random.randint(0, 3), test_pass=random.randint(15, 40),
+                        test_fail=random.randint(0, 5), test_need_attention=random.randint(2, 8),
+                        notes_observations='Assessment in progress'
+                    )
+                    db.session.add(dashboard)
+            db.session.commit()
+            
+            # Add audit logs
+            if AuditLog.query.count() == 0:
+                for i in range(5):
+                    log = AuditLog(
+                        user_id=user.id, table_name=random.choice(['buildings', 'assessments']),
+                        record_id=random.randint(1, 10), action=random.choice(['CREATE', 'UPDATE']),
+                        old_values={'status': 'Draft'}, new_values={'status': 'InProgress'}
+                    )
+                    db.session.add(log)
+                db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Sample data seeded successfully',
+                'counts': {
+                    'users': User.query.count(),
+                    'buildings': Building.query.count(),
+                    'assessments': Assessment.query.count(),
+                    'assessment_items': AssessmentItem.query.count(),
+                    'compliance_checklists': ComplianceChecklist.query.count(),
+                    'compliance_items': ComplianceItem.query.count(),
+                    'system_scores': SystemScore.query.count(),
+                    'test_registers': TestRegister.query.count(),
+                    'capa_registers': CAPARegister.query.count(),
+                    'executive_dashboards': ExecutiveDashboardSummary.query.count(),
+                    'audit_logs': AuditLog.query.count()
+                }
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
     
     # ==================== STEP 2: ASSESSMENT ITEM EDIT/DELETE ====================
     

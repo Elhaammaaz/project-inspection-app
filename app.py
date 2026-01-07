@@ -1129,6 +1129,254 @@ def create_app(config_name='development'):
             'timestamp': l.timestamp.isoformat() if l.timestamp else None
         } for l in logs]})
     
+    @app.route('/api/seed-systems-hierarchy')
+    def api_seed_systems_hierarchy():
+        """Seed complete systems, subsystems, and components hierarchy"""
+        try:
+            # Complete 21 Systems with Subsystems and Components
+            SYSTEMS_HIERARCHY = {
+                'Fire_LifeSafety': {
+                    'name': 'Fire & Life Safety',
+                    'subsystems': {
+                        'Fire Detection': ['Smoke Detectors', 'Heat Detectors', 'Manual Call Points', 'Fire Alarm Panel', 'Beam Detectors'],
+                        'Fire Suppression': ['Sprinkler System', 'Fire Extinguishers', 'FM200 System', 'CO2 System', 'Foam System'],
+                        'Emergency Systems': ['Emergency Lighting', 'Exit Signs', 'PA System', 'Fire Doors', 'Smoke Dampers'],
+                    }
+                },
+                'Electrical': {
+                    'name': 'Electrical Systems',
+                    'subsystems': {
+                        'Power Distribution': ['Main Switchboard', 'Distribution Boards', 'Busway System', 'Cable Trays', 'Power Cables'],
+                        'Lighting': ['General Lighting', 'Task Lighting', 'Decorative Lighting', 'External Lighting', 'Control Systems'],
+                        'Earthing & Protection': ['Earthing System', 'Lightning Protection', 'Surge Protection', 'RCDs', 'MCBs'],
+                    }
+                },
+                'HVAC': {
+                    'name': 'HVAC Systems',
+                    'subsystems': {
+                        'Cooling': ['Chillers', 'AHUs', 'FCUs', 'Split Units', 'VRF System'],
+                        'Heating': ['Boilers', 'Heat Pumps', 'Radiators', 'Underfloor Heating', 'Heat Exchangers'],
+                        'Ventilation': ['Supply Fans', 'Extract Fans', 'Ductwork', 'Grilles & Diffusers', 'Dampers'],
+                    }
+                },
+                'Plumbing': {
+                    'name': 'Plumbing Systems',
+                    'subsystems': {
+                        'Water Supply': ['Main Supply', 'Pumps', 'Storage Tanks', 'PRVs', 'Piping'],
+                        'Drainage': ['Soil Pipes', 'Waste Pipes', 'Floor Drains', 'Manholes', 'Inspection Chambers'],
+                        'Fixtures': ['WCs', 'Basins', 'Showers', 'Baths', 'Kitchen Sinks'],
+                    }
+                },
+                'Structural': {
+                    'name': 'Structural Systems',
+                    'subsystems': {
+                        'Foundations': ['Pile Caps', 'Raft Foundation', 'Strip Footings', 'Ground Beams', 'Basement Walls'],
+                        'Superstructure': ['Columns', 'Beams', 'Slabs', 'Walls', 'Stairs'],
+                        'Roof Structure': ['Roof Slab', 'Steel Trusses', 'Purlins', 'Roof Beams', 'Parapet Walls'],
+                    }
+                },
+                'Roofing': {
+                    'name': 'Roofing Systems',
+                    'subsystems': {
+                        'Roof Covering': ['Membrane', 'Tiles', 'Metal Sheets', 'Insulation', 'Vapor Barrier'],
+                        'Drainage': ['Gutters', 'Downpipes', 'Roof Drains', 'Overflow Pipes', 'Scuppers'],
+                        'Accessories': ['Skylights', 'Roof Hatches', 'Ventilators', 'Flashings', 'Expansion Joints'],
+                    }
+                },
+                'Cladding': {
+                    'name': 'Facade & Cladding',
+                    'subsystems': {
+                        'Curtain Wall': ['Aluminum Frames', 'Glass Panels', 'Spandrel Panels', 'Sealants', 'Gaskets'],
+                        'External Finishes': ['Stone Cladding', 'Metal Panels', 'Render', 'Paint', 'Ceramic Tiles'],
+                        'Openings': ['Windows', 'Doors', 'Louvers', 'Vents', 'Shutters'],
+                    }
+                },
+                'Doors_Windows': {
+                    'name': 'Doors & Windows',
+                    'subsystems': {
+                        'Doors': ['Entrance Doors', 'Internal Doors', 'Fire Doors', 'Access Doors', 'Revolving Doors'],
+                        'Windows': ['Fixed Windows', 'Openable Windows', 'Curtain Wall Windows', 'Roof Lights', 'Glass Blocks'],
+                        'Hardware': ['Locks', 'Hinges', 'Door Closers', 'Panic Hardware', 'Handles'],
+                    }
+                },
+                'Interior_Finishes': {
+                    'name': 'Interior Finishes',
+                    'subsystems': {
+                        'Floors': ['Tiles', 'Carpet', 'Vinyl', 'Marble', 'Raised Floor'],
+                        'Walls': ['Paint', 'Wallpaper', 'Tiles', 'Paneling', 'Plaster'],
+                        'Ceilings': ['Suspended Ceiling', 'Gypsum Board', 'Metal Ceiling', 'Exposed Ceiling', 'Acoustic Ceiling'],
+                    }
+                },
+                'Accessibility': {
+                    'name': 'Accessibility Features',
+                    'subsystems': {
+                        'Circulation': ['Ramps', 'Handrails', 'Tactile Paving', 'Lifts', 'Platform Lifts'],
+                        'Facilities': ['Accessible WCs', 'Shower Rooms', 'Baby Change', 'Refuge Areas', 'Hearing Loops'],
+                        'Signage': ['Braille Signs', 'Tactile Signs', 'Contrast Markings', 'Wayfinding', 'Emergency Signs'],
+                    }
+                },
+                'Security': {
+                    'name': 'Security Systems',
+                    'subsystems': {
+                        'Access Control': ['Card Readers', 'Biometric Readers', 'Intercoms', 'Turnstiles', 'Barriers'],
+                        'CCTV': ['Cameras', 'Recorders', 'Monitors', 'Analytics', 'Storage'],
+                        'Intruder Alarm': ['PIR Sensors', 'Door Contacts', 'Glass Break Sensors', 'Control Panel', 'Keypads'],
+                    }
+                },
+                'Vertical_Transport': {
+                    'name': 'Vertical Transport (Lifts)',
+                    'subsystems': {
+                        'Passenger Lifts': ['Machine', 'Controller', 'Car', 'Doors', 'Safety Gear'],
+                        'Goods Lifts': ['Platform', 'Controls', 'Gates', 'Motor', 'Cables'],
+                        'Escalators': ['Steps', 'Handrails', 'Motor', 'Controller', 'Safety Switches'],
+                    }
+                },
+                'Controls': {
+                    'name': 'Building Management Controls',
+                    'subsystems': {
+                        'BMS': ['Controllers', 'Sensors', 'Actuators', 'Software', 'Network'],
+                        'Metering': ['Electric Meters', 'Water Meters', 'Gas Meters', 'BTU Meters', 'Data Loggers'],
+                        'Integration': ['Gateways', 'Protocols', 'Head End', 'Graphics', 'Alarms'],
+                    }
+                },
+                'Maintenance': {
+                    'name': 'Maintenance & Operations',
+                    'subsystems': {
+                        'Facilities': ['Plant Rooms', 'Stores', 'Workshops', 'Loading Bays', 'Waste Areas'],
+                        'Access': ['Maintenance Walkways', 'Ladders', 'Platforms', 'Cradles', 'Anchor Points'],
+                        'Equipment': ['Tools', 'Spares', 'Consumables', 'PPE', 'Testing Equipment'],
+                    }
+                },
+                'Landscaping': {
+                    'name': 'Landscaping & Grounds',
+                    'subsystems': {
+                        'Hard Landscaping': ['Paving', 'Kerbs', 'Steps', 'Retaining Walls', 'Fencing'],
+                        'Soft Landscaping': ['Trees', 'Shrubs', 'Lawns', 'Planters', 'Irrigation'],
+                        'Features': ['Water Features', 'Sculptures', 'Seating', 'Pergolas', 'Outdoor Lighting'],
+                    }
+                },
+                'Parking': {
+                    'name': 'Parking Facilities',
+                    'subsystems': {
+                        'Structure': ['Ramps', 'Floors', 'Barriers', 'Markings', 'Signage'],
+                        'Systems': ['Payment Systems', 'Guidance Systems', 'Ventilation', 'Fire Systems', 'CCTV'],
+                        'EV Charging': ['Chargers', 'Cable Management', 'Payment', 'Signage', 'Power Supply'],
+                    }
+                },
+                'Signage': {
+                    'name': 'Signage Systems',
+                    'subsystems': {
+                        'Wayfinding': ['Directories', 'Directional Signs', 'Room Signs', 'Floor Signs', 'Maps'],
+                        'Safety': ['Fire Signs', 'Exit Signs', 'Warning Signs', 'Prohibition Signs', 'Mandatory Signs'],
+                        'Information': ['Notice Boards', 'Digital Displays', 'Tenant Boards', 'Reception Signs', 'External Signs'],
+                    }
+                },
+                'IT_Telecom': {
+                    'name': 'IT & Telecommunications',
+                    'subsystems': {
+                        'Data Network': ['Switches', 'Routers', 'Cabling', 'Patch Panels', 'Racks'],
+                        'Voice': ['PABX', 'Handsets', 'Voice Cabling', 'Conference Systems', 'Voicemail'],
+                        'Wireless': ['Access Points', 'Controllers', 'Antennas', 'DAS', 'WiFi'],
+                    }
+                },
+                'Wastewater': {
+                    'name': 'Wastewater Systems',
+                    'subsystems': {
+                        'Collection': ['Grease Traps', 'Interceptors', 'Pumping Stations', 'Manholes', 'Piping'],
+                        'Treatment': ['Septic Tanks', 'Treatment Plants', 'Filters', 'Disinfection', 'Sludge Handling'],
+                        'Disposal': ['Soak-aways', 'Discharge Points', 'Recycling', 'Monitoring', 'Controls'],
+                    }
+                },
+                'Waste_Management': {
+                    'name': 'Waste Management',
+                    'subsystems': {
+                        'Collection': ['Bins', 'Chutes', 'Compactors', 'Balers', 'Containers'],
+                        'Storage': ['Bin Stores', 'Recycling Areas', 'Hazardous Stores', 'Cold Stores', 'Wash Down'],
+                        'Disposal': ['Collection Points', 'Schedules', 'Contractors', 'Documentation', 'Monitoring'],
+                    }
+                },
+                'Energy_Efficiency': {
+                    'name': 'Energy & Efficiency',
+                    'subsystems': {
+                        'Renewables': ['Solar PV', 'Solar Thermal', 'Wind', 'Heat Recovery', 'Biomass'],
+                        'Efficiency': ['LED Lighting', 'VFDs', 'Insulation', 'Glazing', 'Controls'],
+                        'Monitoring': ['Energy Dashboard', 'Sub-metering', 'Benchmarking', 'Reporting', 'Targets'],
+                    }
+                },
+            }
+            
+            created_systems = 0
+            created_subsystems = 0
+            created_components = 0
+            
+            for sys_order, (sys_code, sys_data) in enumerate(SYSTEMS_HIERARCHY.items(), 1):
+                # Check if system exists
+                system = System.query.filter_by(system_code=sys_code).first()
+                if not system:
+                    system = System(
+                        system_code=sys_code,
+                        system_name=sys_data['name'],
+                        description=f"Building system for {sys_data['name']}",
+                        order=sys_order,
+                        active=True
+                    )
+                    db.session.add(system)
+                    db.session.flush()
+                    created_systems += 1
+                
+                # Add subsystems
+                for sub_order, (sub_name, components) in enumerate(sys_data['subsystems'].items(), 1):
+                    sub_code = f"{sys_code}_{sub_name.replace(' ', '_').replace('&', 'and')}"
+                    subsystem = Subsystem.query.filter_by(subsystem_code=sub_code).first()
+                    if not subsystem:
+                        subsystem = Subsystem(
+                            system_id=system.id,
+                            subsystem_code=sub_code,
+                            subsystem_name=sub_name,
+                            description=f"Subsystem: {sub_name} under {sys_data['name']}",
+                            order=sub_order,
+                            active=True
+                        )
+                        db.session.add(subsystem)
+                        db.session.flush()
+                        created_subsystems += 1
+                    
+                    # Add components
+                    for comp_order, comp_name in enumerate(components, 1):
+                        comp_code = f"{sub_code}_{comp_name.replace(' ', '_').replace('&', 'and')}"
+                        component = Component.query.filter_by(component_code=comp_code).first()
+                        if not component:
+                            component = Component(
+                                subsystem_id=subsystem.id,
+                                component_code=comp_code,
+                                component_name=comp_name,
+                                description=f"Component: {comp_name}",
+                                order=comp_order,
+                                active=True
+                            )
+                            db.session.add(component)
+                            created_components += 1
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Systems hierarchy seeded successfully',
+                'created': {
+                    'systems': created_systems,
+                    'subsystems': created_subsystems,
+                    'components': created_components
+                },
+                'totals': {
+                    'systems': System.query.count(),
+                    'subsystems': Subsystem.query.count(),
+                    'components': Component.query.count()
+                }
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
     @app.route('/api/seed-sample-data')
     def api_seed_sample_data():
         """Seed sample data for Power BI testing"""
@@ -1136,6 +1384,9 @@ def create_app(config_name='development'):
         from datetime import timedelta
         
         try:
+            # First seed systems hierarchy
+            api_seed_systems_hierarchy()
+            
             # Get existing data
             systems = System.query.all()
             subsystems = Subsystem.query.all()

@@ -1,0 +1,442 @@
+{% extends 'base.html' %}
+
+{% block title %}Executive Dashboard - {{ building.project_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('building_view', building_id=building.id) }}">{{ building.project_name }}</a></li>
+                    <li class="breadcrumb-item active">Executive Dashboard</li>
+                </ol>
+            </nav>
+            <h1><i class="fas fa-chart-bar"></i> Executive Dashboard</h1>
+            <p class="text-muted">Step 7 of 7: Overall Building Assessment Summary</p>
+        </div>
+    </div>
+
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress" style="height: 25px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                    Step 7 of 7 - Complete
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if dashboard %}
+    <!-- Overall Metrics Row -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-{% if dashboard.overall_building_score >= 75 %}success{% elif dashboard.overall_building_score >= 50 %}warning{% else %}danger{% endif %}">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Overall Building Score</h6>
+                    <h1 class="display-3 {% if dashboard.overall_building_score >= 75 %}text-success{% elif dashboard.overall_building_score >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                        {{ "%.1f"|format(dashboard.overall_building_score or 0) }}%
+                    </h1>
+                    {% if dashboard.threshold_pass %}
+                        <span class="badge bg-success"><i class="fas fa-check"></i> Passes Threshold</span>
+                    {% else %}
+                        <span class="badge bg-danger"><i class="fas fa-times"></i> Below Threshold</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Compliance Rate</h6>
+                    <h1 class="display-3">{{ "%.1f"|format(dashboard.overall_compliance_percent or 0) }}%</h1>
+                    <small class="text-muted">Regulatory Compliance</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Total Assessment Items</h6>
+                    <h1 class="display-3">{{ dashboard.total_assessment_items or 0 }}</h1>
+                    <small class="text-muted">Items Evaluated</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Distribution -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-tasks"></i> Item Status Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <h3 class="text-danger">{{ dashboard.items_open or 0 }}</h3>
+                            <small>Open</small>
+                        </div>
+                        <div class="col-3">
+                            <h3 class="text-warning">{{ dashboard.items_in_progress or 0 }}</h3>
+                            <small>In Progress</small>
+                        </div>
+                        <div class="col-3">
+                            <h3 class="text-success">{{ dashboard.items_closed or 0 }}</h3>
+                            <small>Closed</small>
+                        </div>
+                        <div class="col-3">
+                            <h3 class="text-primary">{{ dashboard.items_verified or 0 }}</h3>
+                            <small>Verified</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="progress" style="height: 30px;">
+                        {% set total = (dashboard.items_open or 0) + (dashboard.items_in_progress or 0) + (dashboard.items_closed or 0) + (dashboard.items_verified or 0) %}
+                        {% if total > 0 %}
+                        <div class="progress-bar bg-danger" style="width: {{ (dashboard.items_open or 0) / total * 100 }}%">{{ dashboard.items_open or 0 }}</div>
+                        <div class="progress-bar bg-warning" style="width: {{ (dashboard.items_in_progress or 0) / total * 100 }}%">{{ dashboard.items_in_progress or 0 }}</div>
+                        <div class="progress-bar bg-success" style="width: {{ (dashboard.items_closed or 0) / total * 100 }}%">{{ dashboard.items_closed or 0 }}</div>
+                        <div class="progress-bar bg-primary" style="width: {{ (dashboard.items_verified or 0) / total * 100 }}%">{{ dashboard.items_verified or 0 }}</div>
+                        {% else %}
+                        <div class="progress-bar bg-secondary" style="width: 100%">No items</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Risk Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col">
+                            <h3 class="text-danger">{{ dashboard.risk_critical or 0 }}</h3>
+                            <small>Critical</small>
+                        </div>
+                        <div class="col">
+                            <h3 class="text-warning">{{ dashboard.risk_high or 0 }}</h3>
+                            <small>High</small>
+                        </div>
+                        <div class="col">
+                            <h3 class="text-info">{{ dashboard.risk_medium or 0 }}</h3>
+                            <small>Medium</small>
+                        </div>
+                        <div class="col">
+                            <h3 class="text-secondary">{{ dashboard.risk_low or 0 }}</h3>
+                            <small>Low</small>
+                        </div>
+                        <div class="col">
+                            <h3 class="text-success">{{ dashboard.risk_acceptable or 0 }}</h3>
+                            <small>Acceptable</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CAPA and Test Status -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-check"></i> CAPA Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <h3 class="text-danger">{{ dashboard.capa_open or 0 }}</h3>
+                            <small>Open</small>
+                        </div>
+                        <div class="col-3">
+                            <h3 class="text-warning">{{ dashboard.capa_in_progress or 0 }}</h3>
+                            <small>In Progress</small>
+                        </div>
+                        <div class="col-3">
+                            <h3 class="text-success">{{ dashboard.capa_closed or 0 }}</h3>
+                            <small>Closed</small>
+                        </div>
+                        <div class="col-3">
+                            <h3 class="text-danger">{{ dashboard.capa_overdue or 0 }}</h3>
+                            <small>Overdue</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-vial"></i> Test Results</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h3 class="text-success">{{ dashboard.test_pass or 0 }}</h3>
+                            <small>Pass</small>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="text-danger">{{ dashboard.test_fail or 0 }}</h3>
+                            <small>Fail</small>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="text-warning">{{ dashboard.test_need_attention or 0 }}</h3>
+                            <small>Need Attention</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> System Performance</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="systemPerformanceChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Risk Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="riskPieChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-doughnut"></i> Item Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusDonutChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Test Results</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="testResultsChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Scores -->
+    {% if system_scores %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-layer-group"></i> System Scores</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>System</th>
+                            <th>Items</th>
+                            <th>Score %</th>
+                            <th>Weight</th>
+                            <th>Weighted Score</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for score in system_scores %}
+                        <tr>
+                            <td><strong>{{ score.system.system_name if score.system else 'Unknown' }}</strong></td>
+                            <td>{{ score.item_count or 0 }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar {% if score.score_percent >= 75 %}bg-success{% elif score.score_percent >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         style="width: {{ score.score_percent or 0 }}%">
+                                        {{ "%.1f"|format(score.score_percent or 0) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ "%.1f"|format(score.weight or 0) }}%</td>
+                            <td>{{ "%.2f"|format(score.weighted_score or 0) }}</td>
+                            <td>
+                                {% if (score.score_percent or 0) >= building.system_threshold_percent %}
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> Pass</span>
+                                {% else %}
+                                    <span class="badge bg-danger"><i class="fas fa-times"></i> Below Threshold</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- No Dashboard Data -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+            <h5>No Dashboard Data Available</h5>
+            <p class="text-muted">Complete the assessment process to generate the executive dashboard.</p>
+            <a href="{{ url_for('assessment_items_list', building_id=building.id) }}" class="btn btn-primary">
+                <i class="fas fa-clipboard-list"></i> Add Assessment Items
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Navigation Buttons -->
+    <div class="d-grid gap-2 d-md-flex justify-content-md-between mt-4">
+        <a href="{{ url_for('building_view', building_id=building.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Building
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i> Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if dashboard %}
+    // System Performance Bar Chart
+    {% if system_scores %}
+    const systemCtx = document.getElementById('systemPerformanceChart').getContext('2d');
+    new Chart(systemCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for score in system_scores %}'{{ score.system.system_name if score.system else "Unknown" }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Score %',
+                data: [{% for score in system_scores %}{{ score.score_percent or 0 }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: [{% for score in system_scores %}
+                    {% if score.score_percent and score.score_percent >= 75 %}'rgba(40, 167, 69, 0.7)'{% elif score.score_percent and score.score_percent >= 50 %}'rgba(255, 193, 7, 0.7)'{% else %}'rgba(220, 53, 69, 0.7)'{% endif %}{% if not loop.last %}, {% endif %}
+                {% endfor %}],
+                borderColor: [{% for score in system_scores %}
+                    {% if score.score_percent and score.score_percent >= 75 %}'rgba(40, 167, 69, 1)'{% elif score.score_percent and score.score_percent >= 50 %}'rgba(255, 193, 7, 1)'{% else %}'rgba(220, 53, 69, 1)'{% endif %}{% if not loop.last %}, {% endif %}
+                {% endfor %}],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Score %' }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Risk Distribution Pie Chart
+    const riskCtx = document.getElementById('riskPieChart').getContext('2d');
+    new Chart(riskCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Critical', 'High', 'Medium', 'Low', 'Acceptable'],
+            datasets: [{
+                data: [{{ dashboard.risk_critical or 0 }}, {{ dashboard.risk_high or 0 }}, {{ dashboard.risk_medium or 0 }}, {{ dashboard.risk_low or 0 }}, {{ dashboard.risk_acceptable or 0 }}],
+                backgroundColor: [
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(23, 162, 184, 0.8)',
+                    'rgba(108, 117, 125, 0.8)',
+                    'rgba(40, 167, 69, 0.8)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12 } }
+            }
+        }
+    });
+
+    // Status Donut Chart
+    const statusCtx = document.getElementById('statusDonutChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Open', 'In Progress', 'Closed', 'Verified'],
+            datasets: [{
+                data: [{{ dashboard.items_open or 0 }}, {{ dashboard.items_in_progress or 0 }}, {{ dashboard.items_closed or 0 }}, {{ dashboard.items_verified or 0 }}],
+                backgroundColor: [
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(0, 123, 255, 0.8)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12 } }
+            }
+        }
+    });
+
+    // Test Results Chart
+    const testCtx = document.getElementById('testResultsChart').getContext('2d');
+    new Chart(testCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pass', 'Fail', 'Need Attention'],
+            datasets: [{
+                data: [{{ dashboard.test_pass or 0 }}, {{ dashboard.test_fail or 0 }}, {{ dashboard.test_need_attention or 0 }}],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(255, 193, 7, 0.8)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12 } }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Register - {{ building.project_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('building_view', building_id=building.id) }}">{{ building.project_name }}</a></li>
+                    <li class="breadcrumb-item active">Test Register</li>
+                </ol>
+            </nav>
+            <h1><i class="fas fa-flask"></i> Test Register</h1>
+            <p class="text-muted">Step 5 of 7: Testing & Verification for {{ building.project_name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('test_register_new', building_id=building.id) }}" class="btn btn-warning">
+                <i class="fas fa-plus"></i> Add Test
+            </a>
+        </div>
+    </div>
+
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress" style="height: 25px;">
+                <div class="progress-bar bg-warning" role="progressbar" style="width: 70%;" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100">
+                    Step 5 of 7
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if tests.items %}
+    <div class="card mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Test Code</th>
+                        <th>Test Type</th>
+                        <th>System</th>
+                        <th>Scheduled Date</th>
+                        <th>Status</th>
+                        <th>Result</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in tests.items %}
+                    <tr>
+                        <td><strong>{{ test.test_code }}</strong></td>
+                        <td>{{ test.test_type }}</td>
+                        <td>{{ test.system.system_name if test.system else 'N/A' }}</td>
+                        <td>{{ test.scheduled_date.strftime('%Y-%m-%d') if test.scheduled_date else '-' }}</td>
+                        <td>
+                            <span class="badge bg-{% if test.status == 'Completed' %}success{% elif test.status == 'In Progress' %}warning{% else %}secondary{% endif %}">
+                                {{ test.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if test.result == 'Pass' %}success{% elif test.result == 'Fail' %}danger{% else %}secondary{% endif %}">
+                                {{ test.result or 'Pending' }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" disabled>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if tests.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if tests.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('test_register', building_id=building.id, page=tests.prev_num) }}">Previous</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for page_num in tests.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num == tests.page %}
+                        <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('test_register', building_id=building.id, page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if tests.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('test_register', building_id=building.id, page=tests.next_num) }}">Next</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="card mb-4">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-flask fa-3x text-muted mb-3"></i>
+            <h5 class="card-title">No Tests Registered Yet</h5>
+            <p class="card-text text-muted">Register tests for building systems verification.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Test Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-secondary">
+                <div class="card-body">
+                    <h3 class="display-6">{{ tests.total if tests.total else 0 }}</h3>
+                    <p class="text-muted mb-0">Total Tests</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <h3 class="display-6 text-warning">0</h3>
+                    <p class="text-muted mb-0">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <h3 class="display-6 text-success">0</h3>
+                    <p class="text-muted mb-0">Passed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-danger">
+                <div class="card-body">
+                    <h3 class="display-6 text-danger">0</h3>
+                    <p class="text-muted mb-0">Failed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="d-grid gap-2 d-md-flex justify-content-md-between mt-4">
+        <a href="{{ url_for('system_scoring', building_id=building.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back: Step 4 - System Scoring
+        </a>
+        <a href="{{ url_for('capa_register', building_id=building.id) }}" class="btn btn-primary btn-lg">
+            Next: Step 6 - CAPA Register <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}

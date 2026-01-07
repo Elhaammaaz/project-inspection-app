@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - BCAR Inspection System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Projects</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/projects/new" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Project
+            </a>
+        </div>
+    </div>
+
+    {% if projects %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Project Name</th>
+                    <th>Building Type</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                <tr>
+                    <td><strong>{{ project.name }}</strong></td>
+                    <td>{{ project.building_type or 'N/A' }}</td>
+                    <td>{{ project.location or 'N/A' }}</td>
+                    <td>
+                        <span class="badge bg-success">Active</span>
+                    </td>
+                    <td>{{ project.created_at.strftime('%Y-%m-%d') if project.created_at else 'N/A' }}</td>
+                    <td>
+                        <a href="/projects/{{ project.id }}" class="btn btn-sm btn-info">View</a>
+                        <a href="/projects/{{ project.id }}/edit" class="btn btn-sm btn-warning">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        <h5>No Projects Yet</h5>
+        <p>Create your first project to begin building assessments.</p>
+        <a href="/projects/new" class="btn btn-primary">Create Project</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    .btn-sm {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}

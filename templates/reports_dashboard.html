@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - BCAR Inspection System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Reports & Analytics</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="#" class="btn btn-primary">
+                <i class="fas fa-file-pdf"></i> Export PDF
+            </a>
+            <a href="#" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Export Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabs for different reports -->
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="test-tab" data-bs-toggle="tab" data-bs-target="#test-register" type="button" role="tab">
+                <i class="fas fa-flask"></i> Test Register
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="capa-tab" data-bs-toggle="tab" data-bs-target="#capa-register" type="button" role="tab">
+                <i class="fas fa-wrench"></i> CAPA Register
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary-report" type="button" role="tab">
+                <i class="fas fa-chart-bar"></i> Summary Report
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-3">
+        <!-- Test Register Tab -->
+        <div class="tab-pane fade show active" id="test-register" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Test Register - Fire & Life Safety System</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Test ID</th>
+                                    <th>Test Name</th>
+                                    <th>System</th>
+                                    <th>Standard / Reference</th>
+                                    <th>Pass/Fail</th>
+                                    <th>Date</th>
+                                    <th>Witness</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>TR-001</code></td>
+                                    <td>Fire Alarm Cause & Effect Test</td>
+                                    <td>Fire_LifeSafety</td>
+                                    <td>NFPA 20/25</td>
+                                    <td><span class="badge bg-success">PASS</span></td>
+                                    <td>2025-12-08</td>
+                                    <td>Client Rep</td>
+                                </tr>
+                                <tr>
+                                    <td><code>TR-002</code></td>
+                                    <td>Smoke/Heat Detector Functional Test</td>
+                                    <td>Fire_LifeSafety</td>
+                                    <td>SBC 801 (Fire Code)</td>
+                                    <td><span class="badge bg-success">PASS</span></td>
+                                    <td>2025-12-09</td>
+                                    <td>Client Rep</td>
+                                </tr>
+                                <tr>
+                                    <td><code>TR-003</code></td>
+                                    <td>Manual Call Point Activation Test</td>
+                                    <td>Fire_LifeSafety</td>
+                                    <td>SBC 801 (Fire Code)</td>
+                                    <td><span class="badge bg-success">PASS</span></td>
+                                    <td>2025-12-10</td>
+                                    <td>Client Rep</td>
+                                </tr>
+                                <tr>
+                                    <td><code>TR-004</code></td>
+                                    <td>Fire Pump Start & Pressure Test</td>
+                                    <td>Fire_LifeSafety</td>
+                                    <td>Civil Defense Requirements</td>
+                                    <td><span class="badge bg-warning">ATTENTION</span></td>
+                                    <td>2025-12-11</td>
+                                    <td>Specialist Vendor</td>
+                                </tr>
+                                <tr>
+                                    <td><code>TR-005</code></td>
+                                    <td>Jockey Pump Auto Cut-in/out Test</td>
+                                    <td>Fire_LifeSafety</td>
+                                    <td>SBC 801 (Fire Code)</td>
+                                    <td><span class="badge bg-success">PASS</span></td>
+                                    <td>2025-12-12</td>
+                                    <td>Specialist Vendor</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Total Tests</h6>
+                                    <h3>5</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Passed</h6>
+                                    <h3 class="text-success">4</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Needs Attention</h6>
+                                    <h3 class="text-warning">1</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Pass Rate</h6>
+                                    <h3 class="text-info">80%</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CAPA Register Tab -->
+        <div class="tab-pane fade" id="capa-register" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">CAPA Register - Corrective & Preventive Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>CAPA ID</th>
+                                    <th>Priority</th>
+                                    <th>System</th>
+                                    <th>Finding</th>
+                                    <th>Required Action</th>
+                                    <th>Responsibility</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>CAPA-0001</code></td>
+                                    <td><span class="badge bg-warning">P2</span></td>
+                                    <td>Fire_LifeSafety</td>
+                                    <td>Minor deficiencies observed. PM records incomplete</td>
+                                    <td>Submit missing certificates</td>
+                                    <td>Specialist Vendor</td>
+                                    <td>05/09/2024</td>
+                                    <td><span class="badge bg-secondary">Open</span></td>
+                                    <td>SAR 22,500</td>
+                                </tr>
+                                <tr>
+                                    <td><code>CAPA-0002</code></td>
+                                    <td><span class="badge bg-warning">P2</span></td>
+                                    <td>Fire_LifeSafety</td>
+                                    <td>Minor deficiencies. Evidence captured</td>
+                                    <td>Rectification and re-test</td>
+                                    <td>Specialist Vendor</td>
+                                    <td>05/09/2024</td>
+                                    <td><span class="badge bg-secondary">Open</span></td>
+                                    <td>SAR 24,000</td>
+                                </tr>
+                                <tr>
+                                    <td><code>CAPA-0004</code></td>
+                                    <td><span class="badge bg-danger">P1</span></td>
+                                    <td>Fire_LifeSafety</td>
+                                    <td>Critical deficiency. Aging components</td>
+                                    <td>Submit missing certificates</td>
+                                    <td>Specialist Vendor</td>
+                                    <td>22/08/2024</td>
+                                    <td><span class="badge bg-danger">Overdue</span></td>
+                                    <td>SAR 59,000</td>
+                                </tr>
+                                <tr>
+                                    <td><code>CAPA-0005</code></td>
+                                    <td><span class="badge bg-danger">P1</span></td>
+                                    <td>Fire_LifeSafety</td>
+                                    <td>Non-compliance. Corrosion observed</td>
+                                    <td>Replace device and update panel</td>
+                                    <td>MEP Contractor</td>
+                                    <td>22/08/2024</td>
+                                    <td><span class="badge bg-danger">Overdue</span></td>
+                                    <td>SAR 26,000</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Total CAPAs</h6>
+                                    <h3>4</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Critical (P1)</h6>
+                                    <h3 class="text-danger">2</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Total Budget</h6>
+                                    <h3>SAR 131,500</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Overdue Items</h6>
+                                    <h3 class="text-danger">2</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Report Tab -->
+        <div class="tab-pane fade" id="summary-report" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Executive Assessment Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">PROJECT INFORMATION</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Project / Building Name:</strong> [Building Name]</li>
+                                <li><strong>Building Type:</strong> REINFORCED CONCRETE (RC)</li>
+                                <li><strong>Primary Use:</strong> ADMIN</li>
+                                <li><strong>City:</strong> Riyadh</li>
+                                <li><strong>Year Built:</strong> [Year]</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">ASSESSMENT DETAILS</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Assessment Date:</strong> [Date]</li>
+                                <li><strong>Inspector:</strong> [Name]</li>
+                                <li><strong>Client:</strong> [Client Name]</li>
+                                <li><strong>Standards Compliance:</strong> SBC 301, 401, 801</li>
+                                <li><strong>Overall Status:</strong> <span class="badge bg-info">In Progress</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6>COMPLIANCE SUMMARY</h6>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h6>Total Assessment Items</h6>
+                                    <h3>694</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-center bg-success text-white">
+                                <div class="card-body">
+                                    <h6>Compliant Items</h6>
+                                    <h3>620</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-center bg-danger text-white">
+                                <div class="card-body">
+                                    <h6>Non-Compliant Items</h6>
+                                    <h3>74</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h6>OVERALL COMPLIANCE RATE</h6>
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 89.35%" aria-valuenow="89" aria-valuemin="0" aria-valuemax="100">
+                                    <strong>89.35% Compliant</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h6>KEY FINDINGS</h6>
+                            <ul>
+                                <li>Fire and Life Safety Systems: 95% Compliant</li>
+                                <li>Structural Systems: 87% Compliant</li>
+                                <li>MEP Systems: 85% Compliant</li>
+                                <li>Critical Issues Identified: 2 items requiring immediate attention</li>
+                                <li>Total CAPA Budget Required: SAR 131,500</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-tabs .nav-link {
+        border-bottom: 2px solid #ddd;
+    }
+    .nav-tabs .nav-link.active {
+        border-bottom-color: #007bff;
+        color: #007bff;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+{% endblock %}

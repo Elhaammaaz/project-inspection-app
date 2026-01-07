@@ -3,461 +3,77 @@
 {% block title %}Edit Profile{% endblock %}
 
 {% block content %}
-<div class="edit-profile-container">
-    <div class="form-header animate-fade-in">
-        <h1>Edit Profile</h1>
-        <p>Update your profile information</p>
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('profile') }}">Profile</a></li>
+                    <li class="breadcrumb-item active">Edit</li>
+                </ol>
+            </nav>
+            <h1><i class="fas fa-user-edit"></i> Edit Profile</h1>
+            <p class="text-muted">Update your profile information</p>
+        </div>
     </div>
 
-    <form method="POST" class="edit-profile-form animate-slide-up">
-        {{ form.hidden_tag() }}
-
-        <div class="form-group">
-            <label for="full_name">Full Name</label>
-            {% if form.full_name.errors %}
-                {{ form.full_name(class="form-control is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.full_name.errors %}
-                        <span>{{ error }}</span>
-                    {% endfor %}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-edit"></i> Account Settings</h5>
                 </div>
-            {% else %}
-                {{ form.full_name(class="form-control") }}
-            {% endif %}
-            <small class="form-text">Changes to your name require admin approval</small>
-        </div>
-
-        <div class="form-group">
-            <label for="phone">Phone Number</label>
-            {% if form.phone.errors %}
-                {{ form.phone(class="form-control is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.phone.errors %}
-                        <span>{{ error }}</span>
-                    {% endfor %}
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_profile') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- Username (Read-only) -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" value="{{ user.username }}" disabled>
+                            <small class="text-muted">Username cannot be changed</small>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                        </div>
+                        
+                        <!-- Role (Read-only) -->
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <input type="text" class="form-control" id="role" value="{{ user.role }}" disabled>
+                            <small class="text-muted">Contact an administrator to change your role</small>
+                        </div>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            {% else %}
-                {{ form.phone(class="form-control") }}
-            {% endif %}
-            <small class="form-text">Changes to your phone require admin approval</small>
-        </div>
-
-        <div class="form-group">
-            <label for="department">Department</label>
-            <div class="autocomplete-wrapper">
-                {% if form.department.errors %}
-                    {{ form.department(class="form-control is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.department.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.department(class="form-control") }}
-                {% endif %}
-                <ul class="autocomplete-list"></ul>
+            </div>
+            
+            <!-- Password Change Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-key"></i> Password</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Password change functionality coming soon.</p>
+                    <button class="btn btn-outline-secondary" disabled>
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
+                </div>
             </div>
         </div>
-
-        <div class="form-group">
-            <label for="job_title">Job Title</label>
-            <div class="autocomplete-wrapper">
-                {% if form.job_title.errors %}
-                    {{ form.job_title(class="form-control is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.job_title.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.job_title(class="form-control") }}
-                {% endif %}
-                <ul class="autocomplete-list"></ul>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="office_location">Office Location</label>
-            <div class="autocomplete-wrapper">
-                {% if form.office_location.errors %}
-                    {{ form.office_location(class="form-control is-invalid autocomplete-input", autocomplete="off", data_api="{{ url_for('autocomplete_office_locations') }}") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.office_location.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.office_location(class="form-control autocomplete-input", autocomplete="off", data_api="{{ url_for('autocomplete_office_locations') }}") }}
-                {% endif %}
-                <ul class="autocomplete-list"></ul>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="theme">Theme Preference</label>
-            {% if form.theme.errors %}
-                {{ form.theme(class="form-control is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.theme.errors %}
-                        <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
-            {% else %}
-                {{ form.theme(class="form-control") }}
-            {% endif %}
-        </div>
-
-        <div class="form-group checkbox-group">
-            <label>
-                {{ form.notifications_enabled() }}
-                <span>Enable Email Notifications</span>
-            </label>
-        </div>
-
-        <div class="form-actions">
-            {{ form.submit(class="btn btn-primary btn-lg") }}
-            <a href="{{ url_for('user_profile') }}" class="btn btn-secondary btn-lg">Cancel</a>
-        </div>
-    </form>
+    </div>
 </div>
-
-<style>
-    .edit-profile-container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    .form-header {
-        margin-bottom: 30px;
-        text-align: center;
-    }
-
-    .form-header h1 {
-        font-size: 2rem;
-        color: #2c3e50;
-        margin-bottom: 10px;
-    }
-
-    .form-header p {
-        color: #7f8c8d;
-        font-size: 1rem;
-    }
-
-    .edit-profile-form {
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .form-group {
-        margin-bottom: 25px;
-        animation: slideUp 0.6s ease-out forwards;
-        opacity: 0;
-    }
-
-    .form-group:nth-child(1) { animation-delay: 0.1s; }
-    .form-group:nth-child(2) { animation-delay: 0.2s; }
-    .form-group:nth-child(3) { animation-delay: 0.3s; }
-    .form-group:nth-child(4) { animation-delay: 0.4s; }
-    .form-group:nth-child(5) { animation-delay: 0.5s; }
-    .form-group:nth-child(6) { animation-delay: 0.6s; }
-    .form-group:nth-child(7) { animation-delay: 0.7s; }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 600;
-        color: #2c3e50;
-        font-size: 0.95rem;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 12px;
-        border: 2px solid #e9ecef;
-        border-radius: 6px;
-        font-size: 1rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background-color: #f8f9fa;
-    }
-
-    .form-control:focus {
-        outline: none;
-        border-color: #667eea;
-        background-color: white;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        transform: translateY(-2px);
-    }
-
-    .form-control.is-invalid {
-        border-color: #dc3545;
-        background-color: #fff5f5;
-    }
-
-    .invalid-feedback {
-        display: block;
-        color: #dc3545;
-        font-size: 0.875rem;
-        margin-top: 5px;
-    }
-
-    .form-text {
-        display: block;
-        margin-top: 5px;
-        color: #7f8c8d;
-        font-size: 0.85rem;
-        font-style: italic;
-    }
-
-    /* Autocomplete styles */
-    .autocomplete-wrapper {
-        position: relative;
-    }
-
-    .autocomplete-input {
-        position: relative;
-        z-index: 1;
-    }
-
-    .autocomplete-list {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        list-style: none;
-        margin: 5px 0 0 0;
-        padding: 0;
-        background: white;
-        border: 2px solid #e9ecef;
-        border-radius: 6px;
-        max-height: 250px;
-        overflow-y: auto;
-        display: none;
-        z-index: 10;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .autocomplete-list.active {
-        display: block;
-        animation: slideDown 0.3s ease-out;
-    }
-
-    .autocomplete-item {
-        padding: 12px 15px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .autocomplete-item:last-child {
-        border-bottom: none;
-    }
-
-    .autocomplete-item:hover {
-        background-color: #f0f7ff;
-        color: #667eea;
-        transform: translateX(5px);
-    }
-
-    .autocomplete-item.selected {
-        background-color: #e9ecef;
-        color: #667eea;
-        font-weight: 600;
-    }
-
-    .checkbox-group {
-        display: flex;
-        align-items: center;
-    }
-
-    .checkbox-group label {
-        display: flex;
-        align-items: center;
-        margin: 0;
-        cursor: pointer;
-        font-weight: 500;
-        color: #2c3e50;
-    }
-
-    .checkbox-group input[type="checkbox"] {
-        margin-right: 10px;
-        cursor: pointer;
-        width: 18px;
-        height: 18px;
-    }
-
-    .form-actions {
-        display: flex;
-        gap: 15px;
-        margin-top: 30px;
-        padding-top: 30px;
-        border-top: 2px solid #e9ecef;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    .btn {
-        padding: 12px 30px;
-        border-radius: 6px;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-block;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-        border: none;
-        font-size: 1rem;
-    }
-
-    .btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .btn-primary:active {
-        transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
-
-    .btn-lg {
-        padding: 14px 35px;
-        font-size: 1.05rem;
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animate-fade-in {
-        animation: fadeIn 0.6s ease-out;
-    }
-
-    .animate-slide-up {
-        animation: slideUp 0.6s ease-out;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .edit-profile-container {
-            padding: 10px;
-        }
-
-        .edit-profile-form {
-            padding: 20px;
-        }
-
-        .form-header h1 {
-            font-size: 1.5rem;
-        }
-
-        .form-actions {
-            flex-direction: column;
-        }
-
-        .btn-lg {
-            width: 100%;
-        }
-    }
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const autocompleteInputs = document.querySelectorAll('.autocomplete-input');
-
-    autocompleteInputs.forEach(input => {
-        const apiEndpoint = input.getAttribute('data_api');
-        const listElement = input.nextElementSibling;
-        let suggestions = [];
-
-        // Fetch suggestions on focus
-        input.addEventListener('focus', async function() {
-            if (suggestions.length === 0) {
-                try {
-                    const response = await fetch(apiEndpoint);
-                    suggestions = await response.json();
-                } catch (error) {
-                    console.error('Error fetching autocomplete data:', error);
-                }
-            }
-            showSuggestions();
-        });
-
-        // Filter suggestions as user types
-        input.addEventListener('input', function() {
-            showSuggestions();
-        });
-
-        function showSuggestions() {
-            const value = input.value.toLowerCase();
-            const filtered = suggestions.filter(item => 
-                item.toLowerCase().includes(value)
-            );
-
-            listElement.innerHTML = '';
-
-            if (filtered.length > 0 && value.length > 0) {
-                filtered.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = 'autocomplete-item';
-                    li.textContent = item;
-                    li.addEventListener('click', function() {
-                        input.value = item;
-                        listElement.innerHTML = '';
-                        listElement.classList.remove('active');
-                    });
-                    listElement.appendChild(li);
-                });
-                listElement.classList.add('active');
-            } else {
-                listElement.classList.remove('active');
-            }
-        }
-
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', function(e) {
-            if (e.target !== input) {
-                listElement.classList.remove('active');
-            }
-        });
-    });
-});
-</script>
 {% endblock %}

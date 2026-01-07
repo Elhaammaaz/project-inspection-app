@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Inspections - BCAR Inspection System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Inspections & Assessments</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/inspections/new" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Inspection
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Building Assessment Form</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/inspections/create" class="row g-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="col-md-6">
+                            <label class="form-label">System</label>
+                            <select class="form-select" name="system" required>
+                                <option value="">Select System</option>
+                                <option value="Fire_LifeSafety">Fire & Life Safety</option>
+                                <option value="Structural">Structural</option>
+                                <option value="MEP">MEP Systems</option>
+                                <option value="Security">Security</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Subsystem</label>
+                            <select class="form-select" name="subsystem" required>
+                                <option value="">Select Subsystem</option>
+                                <option>Fire Alarm System</option>
+                                <option>Suppression System</option>
+                                <option>Emergency Lighting</option>
+                                <option>Escape Routes</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Component</label>
+                            <select class="form-select" name="component" required>
+                                <option value="">Select Component</option>
+                                <option>Detectors</option>
+                                <option>Panels</option>
+                                <option>Sprinklers</option>
+                                <option>Exits</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Item Code</label>
+                            <input type="text" class="form-control" name="item_code" placeholder="e.g., FL-CD-001">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">Inspection Item</label>
+                            <input type="text" class="form-control" name="inspection_item" placeholder="Describe the item to inspect">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Criteria</label>
+                            <textarea class="form-control" name="criteria" rows="2" placeholder="Acceptance criteria"></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Test Method</label>
+                            <textarea class="form-control" name="test_method" rows="2" placeholder="How will this be tested?"></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Asset Tag No.</label>
+                            <input type="text" class="form-control" name="asset_tag" placeholder="e.g., TAG-001">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Snag Location</label>
+                            <input type="text" class="form-control" name="snag_location" placeholder="Location of issue">
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Submit Inspection
+                            </button>
+                            <a href="/dashboard" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Inspections -->
+    {% if inspections %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4>Recent Inspections</h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Item Code</th>
+                            <th>System</th>
+                            <th>Inspection Item</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inspection in inspections %}
+                        <tr>
+                            <td><code>{{ inspection.item_code }}</code></td>
+                            <td>{{ inspection.system }}</td>
+                            <td>{{ inspection.inspection_item }}</td>
+                            <td><span class="badge bg-info">Pending</span></td>
+                            <td>{{ inspection.created_at.strftime('%Y-%m-%d') if inspection.created_at else 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .form-label {
+        font-weight: 600;
+        color: #333;
+    }
+    .card {
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}

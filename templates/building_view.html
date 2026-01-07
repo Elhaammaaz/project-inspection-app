@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ building.project_name }} - Building Overview{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">{{ building.project_name }}</li>
+                </ol>
+            </nav>
+            <h1><i class="fas fa-building"></i> {{ building.project_name }}</h1>
+            <p class="text-muted">Building Code: {{ building.building_code }}</p>
+        </div>
+    </div>
+
+    <!-- Building Information Card -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Building Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr><th>City:</th><td>{{ building.city }}</td></tr>
+                            <tr><th>Address:</th><td>{{ building.address }}</td></tr>
+                            <tr><th>Building Type:</th><td>{{ building.building_type }}</td></tr>
+                            <tr><th>Primary Use:</th><td>{{ building.primary_use }}</td></tr>
+                            <tr><th>Gross Area:</th><td>{{ building.gross_built_area_m2 }} m²</td></tr>
+                            <tr><th>Floors:</th><td>{{ building.number_of_floors }}</td></tr>
+                            <tr><th>Construction Year:</th><td>{{ building.construction_year }}</td></tr>
+                            <tr><th>Inspection Date:</th><td>{{ building.inspection_date }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Assessment Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% if dashboard %}
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h2 class="display-4 {% if dashboard.overall_building_score >= 75 %}text-success{% elif dashboard.overall_building_score >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ "%.1f"|format(dashboard.overall_building_score or 0) }}%
+                                </h2>
+                                <p class="text-muted">Overall Score</p>
+                            </div>
+                            <div class="col-6">
+                                <h2 class="display-4">{{ dashboard.total_assessment_items or 0 }}</h2>
+                                <p class="text-muted">Total Items</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <span class="badge bg-danger fs-6">{{ dashboard.items_open or 0 }}</span>
+                                <small class="d-block text-muted">Open</small>
+                            </div>
+                            <div class="col-3">
+                                <span class="badge bg-warning fs-6">{{ dashboard.items_in_progress or 0 }}</span>
+                                <small class="d-block text-muted">In Progress</small>
+                            </div>
+                            <div class="col-3">
+                                <span class="badge bg-success fs-6">{{ dashboard.items_closed or 0 }}</span>
+                                <small class="d-block text-muted">Closed</small>
+                            </div>
+                            <div class="col-3">
+                                <span class="badge bg-primary fs-6">{{ dashboard.items_verified or 0 }}</span>
+                                <small class="d-block text-muted">Verified</small>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted">No assessment data yet. Start by adding assessment items.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7-Step Workflow Navigation -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="fas fa-tasks"></i> 7-Step Workflow</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Step 1: Building Info (Complete) -->
+                <div class="col-md-3 col-lg mb-3">
+                    <div class="card border-success h-100">
+                        <div class="card-body text-center">
+                            <span class="badge bg-success mb-2">Step 1</span>
+                            <h6>Building Info</h6>
+                            <p class="small text-muted">✓ Complete</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Assessment Items -->
+                <div class="col-md-3 col-lg mb-3">
+                    <div class="card border-primary h-100">
+                        <div class="card-body text-center">
+                            <span class="badge bg-primary mb-2">Step 2</span>
+                            <h6>Assessment Items</h6>
+                            <a href="{{ url_for('assessment_items_list', building_id=building.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-clipboard-list"></i> Manage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                
+                <!-- Step 3: Compliance -->
+                <div class="col-md-3 col-lg mb-3">
+                    <div class="card border-primary h-100">
+                        <div class="card-body text-center">
+                            <span class="badge bg-primary mb-2">Step 3</span>
+                            <h6>Compliance</h6>
+                            <a href="{{ url_for('compliance_checklist', building_id=building.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-check-double"></i> Manage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 4: System Scoring -->
+                <div class="col-md-3 col-lg mb-3">
+                    <div class="card border-info h-100">
+                        <div class="card-body text-center">
+                            <span class="badge bg-info mb-2">Step 4</span>
+                            <h6>System Scoring</h6>
+                            <a href="{{ url_for('system_scoring', building_id=building.id) }}" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-chart-bar"></i> View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 5: Tests -->
+                <div class="col-md-3 col-lg mb-3">
+                    <div class="card border-warning h-100">
+                        <div class="card-body text-center">
+                            <span class="badge bg-warning mb-2">Step 5</span>
+                            <h6>Test Register</h6>
+                            <a href="{{ url_for('test_register', building_id=building.id) }}" class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-flask"></i> Manage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 6: CAPA -->
+                <div class="col-md-3 col-lg mb-3">
+                    <div class="card border-danger h-100">
+                        <div class="card-body text-center">
+                            <span class="badge bg-danger mb-2">Step 6</span>
+                            <h6>CAPA Register</h6>
+                            <a href="{{ url_for('capa_register', building_id=building.id) }}" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-tasks"></i> Manage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 7: Dashboard -->
+                <div class="col-md-3 col-lg mb-3">
+                    <div class="card border-success h-100">
+                        <div class="card-body text-center">
+                            <span class="badge bg-success mb-2">Step 7</span>
+                            <h6>Dashboard</h6>
+                            <a href="{{ url_for('executive_dashboard', building_id=building.id) }}" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-chart-pie"></i> View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <a href="{{ url_for('assessment_items_list', building_id=building.id) }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-play"></i> Start Workflow (Step 2)
+        </a>
+    </div>
+</div>
+{% endblock %}

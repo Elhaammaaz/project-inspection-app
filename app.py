@@ -1,504 +1,1102 @@
+"""
+BCAR Flask Application - 7-Step Guided Workflow
+Enterprise production-ready with blueprints, role-based access, and audit logging
+"""
+
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from config import Config
-from models import db, User, ProjectInspection, InspectionSystem
-from forms import LoginForm, RegistrationForm, ProjectInspectionForm, InspectionSystemForm
+from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
+from config import config as config_dict
+import os
 from datetime import datetime
 
+from models import (
+    db, User, Building, Assessment, AssessmentItem, SystemScore,
+    ComplianceChecklist, ComplianceItem, TestRegister, CAPARegister,
+    System, Subsystem, Component, Rate, Weight, Responsibility, Priority,
+    ComplianceArea, AuditLog, ExecutiveDashboardSummary
+)
+from calculations import CalculationService
 
-def create_app():
+
+def _seed_lookup_tables():
+    """Populate lookup tables on first run"""
+    # Rates
+    if Rate.query.first() is None:
+        for i, desc in enumerate(['Poor', 'Below Average', 'Average', 'Good', 'Excellent'], 1):
+            db.session.add(Rate(rate_value=i, description=desc, active=True))
+    
+    # Weights
+    if Weight.query.first() is None:
+        for w in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]:
+            db.session.add(Weight(weight_value=w, description=f'Weight {w}', active=True))
+    
+    # Priorities
+    if Priority.query.first() is None:
+        for i, name in enumerate(['P1', 'P2', 'P3', 'P4'], 1):
+            db.session.add(Priority(priority_name=name, order=i, active=True))
+    
+    # Responsibilities
+    if Responsibility.query.first() is None:
+        for name in ['MEP', 'Main Contractor', 'FM', 'Specialist', 'Client']:
+            db.session.add(Responsibility(name=name, active=True))
+    
+    # Compliance Areas
+    if ComplianceArea.query.first() is None:
+        areas = [
+            ('Fire Safety', 'Fire suppression and safety', 'FS-001'),
+            ('Electrical Safety', 'Electrical systems compliance', 'ES-001'),
+            ('HVAC Efficiency', 'Climate control systems', 'HV-001'),
+            ('Water Systems', 'Plumbing and water treatment', 'WS-001'),
+            ('Building Envelope', 'Structural and thermal integrity', 'BE-001'),
+        ]
+        for area, desc, code in areas:
+            db.session.add(ComplianceArea(area_name=area, description=desc, regulation_code=code, active=True))
+    
+    # Systems (21 building systems)
+    if System.query.first() is None:
+        systems = [
+            ('Fire_LifeSafety', 'Fire Life Safety'),
+            ('Electrical', 'Electrical Systems'),
+            ('HVAC', 'HVAC Systems'),
+            ('Plumbing', 'Plumbing Systems'),
+            ('Structural', 'Structural Systems'),
+            ('Roofing', 'Roofing Systems'),
+            ('Cladding', 'Facade & Cladding'),
+            ('Doors_Windows', 'Doors & Windows'),
+            ('Interior_Finishes', 'Interior Finishes'),
+            ('Accessibility', 'Accessibility Features'),
+            ('Security', 'Security Systems'),
+            ('Vertical_Transport', 'Vertical Transport (Lifts)'),
+            ('Controls', 'Building Management Controls'),
+            ('Maintenance', 'Maintenance & Operations'),
+            ('Landscaping', 'Landscaping & Grounds'),
+            ('Parking', 'Parking Facilities'),
+            ('Signage', 'Signage Systems'),
+            ('IT_Telecom', 'IT & Telecommunications'),
+            ('Wastewater', 'Wastewater Systems'),
+            ('Waste_Management', 'Waste Management'),
+            ('Energy_Efficiency', 'Energy & Efficiency'),
+        ]
+        for i, (code, name) in enumerate(systems, 1):
+            db.session.add(System(system_code=code, system_name=name, order=i, active=True))
+    
+    db.session.commit()
+
+
+def create_app(config_name='development'):
     """Application factory"""
     app = Flask(__name__)
-    app.config.from_object(Config)
+    
+    # Configuration
+    config_obj = config_dict.get(config_name, config_dict['development'])
+    app.config.from_object(config_obj)
     
     # Initialize extensions
     db.init_app(app)
+    migrate = Migrate(app, db)
+    csrf = CSRFProtect(app)
     
-    # Login manager setup
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = 'login'
+    login_manager.login_message_category = 'info'
     
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
     
-    # ==================== AUTHENTICATION ROUTES ====================
+    # ==================== DATABASE INITIALIZATION ====================
     
-    @app.route('/')
-    def index():
-        """Home page - redirect to inspections if logged in, login if not"""
+    with app.app_context():
+        db.create_all()
+        
+        # Create demo user if not exists
+        demo = User.query.filter_by(username='demo').first()
+        if not demo:
+            demo = User(
+                username='demo',
+                email='demo@example.com',
+                role='Admin'
+            )
+            demo.set_password('demo123')
+            db.session.add(demo)
+            db.session.commit()
+            print('✓ Demo user created: demo / demo123')
+        
+        # Seed lookup tables if empty
+        _seed_lookup_tables()
+    
+    # ==================== CONTEXT PROCESSOR ====================
+    
+    @app.context_processor
+    def inject_pending_requests():
+        """Inject pending user count for admin notification bell"""
+        pending_count = 0
+        if current_user.is_authenticated and current_user.is_admin:
+            pending_count = User.query.filter_by(is_active=False).count()
+        return dict(pending_requests_count=pending_count)
+    
+    # ==================== CACHE CONTROL (Prevent back button after logout) ====================
+    
+    @app.after_request
+    def add_cache_control_headers(response):
+        """Prevent browser from caching authenticated pages"""
         if current_user.is_authenticated:
-            return redirect(url_for('inspections'))
-        return redirect(url_for('login'))
-    
-    
-    @app.route('/login', methods=['GET', 'POST'])
-    def login():
-        """User login route"""
-        if current_user.is_authenticated:
-            return redirect(url_for('inspections'))
-        
-        form = LoginForm()
-        if form.validate_on_submit():
-            user = User.query.filter_by(email=form.email.data).first()
-            
-            if user and user.check_password(form.password.data) and user.active:
-                login_user(user)
-                next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('inspections'))
-            else:
-                flash('Email or password is incorrect, or your account is pending approval.', 'danger')
-        
-        return render_template('login.html', form=form)
-    
-    
-    @app.route('/register', methods=['GET', 'POST'])
-    def register():
-        """User registration route - creates pending account"""
-        if current_user.is_authenticated:
-            return redirect(url_for('inspections'))
-        
-        form = RegistrationForm()
-        if form.validate_on_submit():
-            try:
-                # Create new user (inactive by default)
-                user = User(email=form.email.data, full_name=form.full_name.data)
-                user.set_password(form.password.data)
-                user.active = 0  # Pending approval
-                db.session.add(user)
-                db.session.commit()
-                flash('Registration successful! Your account is pending approval.', 'success')
-                return redirect(url_for('login'))
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Error during registration: {str(e)}', 'danger')
-        return render_template('register.html', form=form)
-    
-    
-    @app.route('/logout')
-    @login_required
-    def logout():
-        """User logout route"""
-        logout_user()
-        flash('You have been logged out.', 'info')
-        return redirect(url_for('login'))
-    
-    
-    # ==================== INSPECTION ROUTES ====================
-    
-    @app.route('/inspections')
-    @login_required
-    def inspections():
-        """View all inspections for current user"""
-        inspections = ProjectInspection.query.filter_by(user_id=current_user.id).all()
-        return render_template('inspections.html', inspections=inspections)
-    
-    
-    @app.route('/inspection/new', methods=['GET', 'POST'])
-    @login_required
-    def new_inspection():
-        """Create new inspection"""
-        form = ProjectInspectionForm()
-        if form.validate_on_submit():
-            try:
-                inspection = ProjectInspection(
-                    user_id=current_user.id,
-                    project_name=form.project_name.data,
-                    city=form.city.data,
-                    address=form.address.data,
-                    gps_latitude=form.gps_latitude.data,
-                    gps_longitude=form.gps_longitude.data,
-                    building_type=form.building_type.data,
-                    primary_use=form.primary_use.data,
-                    gross_built_area=form.gross_built_area.data,
-                    number_of_floors=form.number_of_floors.data,
-                    last_renovation_date=form.last_renovation_date.data,
-                    construction_year=form.construction_year.data,
-                    current_year=form.current_year.data,
-                    estimated_life_time=form.estimated_life_time.data,
-                    planned_retirement_year=form.planned_retirement_year.data,
-                    inspection_date=form.inspection_date.data,
-                    fm_contractor=form.fm_contractor.data,
-                    system_threshold=form.system_threshold.data,
-                    inspection_result=form.inspection_result.data,
-                    building_score=form.building_score.data,
-                    high_priority_classified=form.high_priority_classified.data,
-                    fm_performance=form.fm_performance.data,
-                    government_compliance=form.government_compliance.data,
-                    fire_life_safety=form.fire_life_safety.data,
-                    total_economic_life=form.total_economic_life.data,
-                    chronological_age=form.chronological_age.data,
-                    estimated_effective_age=form.estimated_effective_age.data,
-                    estimated_remaining_life=form.estimated_remaining_life.data,
-                    notes=form.notes.data,
-                    inspection_status=form.inspection_status.data,
-                    inspection_by=form.inspection_by.data,
-                    reviewed_by=form.reviewed_by.data
-                )
-                db.session.add(inspection)
-                db.session.commit()
-                
-                flash(f'✓ Inspection "{inspection.project_name}" created successfully!', 'success')
-                return redirect(url_for('view_inspection', inspection_id=inspection.id))
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Error creating inspection: {str(e)}', 'danger')
-        
-        return render_template('inspection_form.html', form=form)
-    
-    
-    @app.route('/inspection/<int:inspection_id>', methods=['GET'])
-    @login_required
-    def view_inspection(inspection_id):
-        """View project inspection details with all 21 systems"""
-        inspection = ProjectInspection.query.get_or_404(inspection_id)
-        
-        if inspection.user_id != current_user.id:
-            flash('You do not have permission to view this inspection.', 'danger')
-            return redirect(url_for('inspections'))
-        
-        return render_template('view_inspection.html', inspection=inspection)
-    
-    
-    @app.route('/inspection/<int:inspection_id>/edit', methods=['GET', 'POST'])
-    @login_required
-    def edit_inspection(inspection_id):
-        """Edit project inspection"""
-        inspection = ProjectInspection.query.get_or_404(inspection_id)
-        
-        if inspection.user_id != current_user.id:
-            flash('You do not have permission to edit this inspection.', 'danger')
-            return redirect(url_for('inspections'))
-        
-        form = ProjectInspectionForm()
-        if form.validate_on_submit():
-            inspection.project_name = form.project_name.data
-            inspection.city = form.city.data
-            inspection.address = form.address.data
-            inspection.gps_latitude = form.gps_latitude.data
-            inspection.gps_longitude = form.gps_longitude.data
-            inspection.building_type = form.building_type.data
-            inspection.primary_use = form.primary_use.data
-            inspection.gross_built_area = form.gross_built_area.data
-            inspection.number_of_floors = form.number_of_floors.data
-            inspection.last_renovation_date = form.last_renovation_date.data
-            inspection.construction_year = form.construction_year.data
-            inspection.current_year = form.current_year.data
-            inspection.estimated_life_time = form.estimated_life_time.data
-            inspection.planned_retirement_year = form.planned_retirement_year.data
-            inspection.inspection_date = form.inspection_date.data
-            inspection.fm_contractor = form.fm_contractor.data
-            inspection.system_threshold = form.system_threshold.data
-            inspection.inspection_result = form.inspection_result.data
-            inspection.building_score = form.building_score.data
-            inspection.high_priority_classified = form.high_priority_classified.data
-            inspection.fm_performance = form.fm_performance.data
-            inspection.government_compliance = form.government_compliance.data
-            inspection.fire_life_safety = form.fire_life_safety.data
-            inspection.total_economic_life = form.total_economic_life.data
-            inspection.chronological_age = form.chronological_age.data
-            inspection.estimated_effective_age = form.estimated_effective_age.data
-            inspection.estimated_remaining_life = form.estimated_remaining_life.data
-            inspection.notes = form.notes.data
-            inspection.inspection_status = form.inspection_status.data
-            inspection.inspection_by = form.inspection_by.data
-            inspection.reviewed_by = form.reviewed_by.data
-            inspection.updated_at = datetime.utcnow()
-            
-            db.session.commit()
-            flash(f'✓ Inspection "{inspection.project_name}" updated successfully!', 'success')
-            return redirect(url_for('view_inspection', inspection_id=inspection.id))
-        
-        elif request.method == 'GET':
-            form.project_name.data = inspection.project_name
-            form.city.data = inspection.city
-            form.address.data = inspection.address
-            form.gps_latitude.data = inspection.gps_latitude
-            form.gps_longitude.data = inspection.gps_longitude
-            form.building_type.data = inspection.building_type
-            form.primary_use.data = inspection.primary_use
-            form.gross_built_area.data = inspection.gross_built_area
-            form.number_of_floors.data = inspection.number_of_floors
-            form.last_renovation_date.data = inspection.last_renovation_date
-            form.construction_year.data = inspection.construction_year
-            form.current_year.data = inspection.current_year
-            form.estimated_life_time.data = inspection.estimated_life_time
-            form.planned_retirement_year.data = inspection.planned_retirement_year
-            form.inspection_date.data = inspection.inspection_date
-            form.fm_contractor.data = inspection.fm_contractor
-            form.system_threshold.data = inspection.system_threshold
-            form.inspection_result.data = inspection.inspection_result
-            form.building_score.data = inspection.building_score
-            form.high_priority_classified.data = inspection.high_priority_classified
-            form.fm_performance.data = inspection.fm_performance
-            form.government_compliance.data = inspection.government_compliance
-            form.fire_life_safety.data = inspection.fire_life_safety
-            form.total_economic_life.data = inspection.total_economic_life
-            form.chronological_age.data = inspection.chronological_age
-            form.estimated_effective_age.data = inspection.estimated_effective_age
-            form.estimated_remaining_life.data = inspection.estimated_remaining_life
-            form.notes.data = inspection.notes
-            form.inspection_status.data = inspection.inspection_status
-            form.inspection_by.data = inspection.inspection_by
-            form.reviewed_by.data = inspection.reviewed_by
-        
-        return render_template('inspection_form.html', form=form, inspection=inspection)
-    
-    
-    @app.route('/inspection/<int:inspection_id>/delete', methods=['POST'])
-    @login_required
-    def delete_inspection(inspection_id):
-        """Delete inspection"""
-        inspection = ProjectInspection.query.get_or_404(inspection_id)
-        
-        if inspection.user_id != current_user.id:
-            flash('You do not have permission to delete this inspection.', 'danger')
-            return redirect(url_for('inspections'))
-        
-        try:
-            db.session.delete(inspection)
-            db.session.commit()
-            flash('✓ Inspection deleted successfully!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error deleting inspection: {str(e)}', 'danger')
-        
-        return redirect(url_for('inspections'))
-    
-    
-    # ==================== INSPECTION SYSTEM ROUTES ====================
-    
-    @app.route('/inspection/<int:inspection_id>/system/add', methods=['GET', 'POST'])
-    @login_required
-    def add_system(inspection_id):
-        """Add inspection system to a project"""
-        inspection = ProjectInspection.query.get_or_404(inspection_id)
-        
-        if inspection.user_id != current_user.id:
-            flash('You do not have permission to edit this inspection.', 'danger')
-            return redirect(url_for('inspections'))
-        
-        form = InspectionSystemForm()
-        if form.validate_on_submit():
-            try:
-                system = InspectionSystem(
-                    inspection_id=inspection.id,
-                    system_name=form.system_name.data,
-                    system_type=form.system_type.data,
-                    condition_rating=form.condition_rating.data,
-                    last_maintenance=form.last_maintenance.data,
-                    maintenance_notes=form.maintenance_notes.data,
-                    next_maintenance=form.next_maintenance.data
-                )
-                db.session.add(system)
-                db.session.commit()
-                
-                flash(f'✓ System "{system.system_name}" added successfully!', 'success')
-                return redirect(url_for('view_inspection', inspection_id=inspection.id))
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Error adding system: {str(e)}', 'danger')
-        
-        return render_template('system_form.html', form=form, inspection=inspection)
-    
-    
-    @app.route('/system/<int:system_id>/edit', methods=['GET', 'POST'])
-    @login_required
-    def edit_system(system_id):
-        """Edit inspection system"""
-        system = InspectionSystem.query.get_or_404(system_id)
-        inspection = system.inspection
-        
-        if inspection.user_id != current_user.id:
-            flash('You do not have permission to edit this system.', 'danger')
-            return redirect(url_for('inspections'))
-        
-        form = InspectionSystemForm()
-        if form.validate_on_submit():
-            system.system_name = form.system_name.data
-            system.system_type = form.system_type.data
-            system.condition_rating = form.condition_rating.data
-            system.last_maintenance = form.last_maintenance.data
-            system.maintenance_notes = form.maintenance_notes.data
-            system.next_maintenance = form.next_maintenance.data
-            
-            db.session.commit()
-            flash(f'✓ System "{system.system_name}" updated successfully!', 'success')
-            return redirect(url_for('view_inspection', inspection_id=inspection.id))
-        
-        elif request.method == 'GET':
-            form.system_name.data = system.system_name
-            form.system_type.data = system.system_type
-            form.condition_rating.data = system.condition_rating
-            form.last_maintenance.data = system.last_maintenance
-            form.maintenance_notes.data = system.maintenance_notes
-            form.next_maintenance.data = system.next_maintenance
-        
-        return render_template('system_form.html', form=form, system=system, inspection=inspection)
-    
-    
-    @app.route('/system/<int:system_id>/delete', methods=['POST'])
-    @login_required
-    def delete_system(system_id):
-        """Delete inspection system"""
-        system = InspectionSystem.query.get_or_404(system_id)
-        inspection = system.inspection
-        
-        if inspection.user_id != current_user.id:
-            flash('You do not have permission to delete this system.', 'danger')
-            return redirect(url_for('inspections'))
-        
-        try:
-            db.session.delete(system)
-            db.session.commit()
-            flash('✓ System deleted successfully!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error deleting system: {str(e)}', 'danger')
-        
-        return redirect(url_for('view_inspection', inspection_id=inspection.id))
-    
-    
-    # ==================== ADMIN ROUTES ====================
-    
-    @app.route('/admin/requests')
-    @login_required
-    def admin_requests():
-        """Admin page - view pending user approval requests"""
-        # Check if user is admin (first user or has admin flag)
-        admin_user = User.query.filter_by(is_admin=True).first()
-        if not admin_user or current_user.id != admin_user.id:
-            flash('You do not have permission to access the admin panel.', 'danger')
-            return redirect(url_for('inspections'))
-        
-        pending_users = User.query.filter_by(active=0).all()
-        return render_template('admin_requests.html', pending_users=pending_users)
-    
-    
-    @app.route('/admin/approve/<int:user_id>', methods=['POST'])
-    @login_required
-    def approve_user(user_id):
-        """Admin approves user registration"""
-        admin_user = User.query.filter_by(is_admin=True).first()
-        if not admin_user or current_user.id != admin_user.id:
-            flash('You do not have permission to perform this action.', 'danger')
-            return redirect(url_for('inspections'))
-        
-        user = User.query.get_or_404(user_id)
-        try:
-            user.active = 1
-            db.session.commit()
-            flash(f'✓ User {user.email} has been approved!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error approving user: {str(e)}', 'danger')
-        
-        return redirect(url_for('admin_requests'))
-    
-    
-    @app.route('/admin/reject/<int:user_id>', methods=['POST'])
-    @login_required
-    def reject_user(user_id):
-        """Admin rejects user registration"""
-        admin_user = User.query.filter_by(is_admin=True).first()
-        if not admin_user or current_user.id != admin_user.id:
-            flash('You do not have permission to perform this action.', 'danger')
-            return redirect(url_for('inspections'))
-        
-        user = User.query.get_or_404(user_id)
-        try:
-            db.session.delete(user)
-            db.session.commit()
-            flash(f'✓ User {user.email} has been rejected!', 'info')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error rejecting user: {str(e)}', 'danger')
-        
-        return redirect(url_for('admin_requests'))
-    
-    
-    # ==================== API ENDPOINTS ====================
-    
-    @app.route('/api/inspections', methods=['GET'])
-    @login_required
-    def api_inspections():
-        """API endpoint - get all inspections for current user"""
-        try:
-            inspections = ProjectInspection.query.filter_by(user_id=current_user.id).all()
-            data = []
-            for insp in inspections:
-                data.append({
-                    'id': insp.id,
-                    'project_name': insp.project_name,
-                    'city': insp.city,
-                    'building_type': insp.building_type,
-                    'created_at': str(insp.created_at),
-                    'systems_count': len(insp.systems),
-                })
-            return jsonify({'status': 'success', 'count': len(data), 'data': data})
-        except Exception as e:
-            return jsonify({'status': 'error', 'message': str(e)}), 500
-    
-    
-    @app.route('/api/systems', methods=['GET'])
-    @login_required
-    def api_systems():
-        """API endpoint - get all systems for all inspections of current user"""
-        try:
-            inspections = ProjectInspection.query.filter_by(user_id=current_user.id).all()
-            data = []
-            for insp in inspections:
-                for system in insp.systems:
-                    data.append({
-                        'id': system.id,
-                        'inspection_id': insp.id,
-                        'project_name': insp.project_name,
-                        'system_name': system.system_name,
-                        'system_type': system.system_type,
-                        'condition_rating': system.condition_rating,
-                        'created_at': str(system.created_at),
-                    })
-            return jsonify({'status': 'success', 'count': len(data), 'data': data})
-        except Exception as e:
-            return jsonify({'status': 'error', 'message': str(e)}), 500
-    
-    
-    @app.route('/api/users', methods=['GET'])
-    @login_required
-    def api_users():
-        """API endpoint - get list of active users (admin only)"""
-        admin_user = User.query.filter_by(is_admin=True).first()
-        if not admin_user or current_user.id != admin_user.id:
-            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
-        
-        try:
-            users = User.query.filter_by(active=1).all()
-            data = []
-            for user in users:
-                data.append({
-                    'id': user.id,
-                    'email': user.email,
-                    'active': user.active,
-                    'created_at': str(user.created_at),
-                })
-            return jsonify({'status': 'success', 'count': len(data), 'data': data})
-        except Exception as e:
-            return jsonify({'status': 'error', 'message': str(e)}), 500
-    
+            # Prevent caching of authenticated pages
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        return response
     
     # ==================== ERROR HANDLERS ====================
     
     @app.errorhandler(404)
-    def not_found_error(error):
+    def not_found(error):
         return render_template('404.html'), 404
     
-    
     @app.errorhandler(500)
-    def internal_error(error):
+    def server_error(error):
         db.session.rollback()
         return render_template('500.html'), 500
     
+    @app.errorhandler(403)
+    def forbidden(error):
+        return render_template('403.html'), 403
+    
+    # ==================== AUTHENTICATION ====================
+    
+    @app.route('/register', methods=['GET', 'POST'])
+    def register():
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard'))
+        
+        from forms import RegisterForm
+        form = RegisterForm()
+        
+        if form.validate_on_submit():
+            user = User(
+                username=form.username.data,
+                email=form.email.data,
+                role='Viewer',
+                is_active=False  # Pending admin approval
+            )
+            user.set_password(form.password.data)
+            db.session.add(user)
+            db.session.commit()
+            
+            flash('Account request submitted! Please wait for admin approval.', 'info')
+            return redirect(url_for('login'))
+        
+        return render_template('register.html', form=form)
+    
+    @app.route('/login', methods=['GET', 'POST'])
+    def login():
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard'))
+        
+        from forms import LoginForm
+        form = LoginForm()
+        
+        if form.validate_on_submit():
+            user = User.query.filter_by(username=form.username.data).first()
+            if user and user.check_password(form.password.data):
+                if not user.is_active:
+                    flash('Your account is pending admin approval. Please wait.', 'warning')
+                    return render_template('login.html', form=form)
+                login_user(user, remember=True)
+                next_page = request.args.get('next')
+                return redirect(next_page) if next_page else redirect(url_for('dashboard'))
+            else:
+                flash('Invalid username or password', 'danger')
+        
+        return render_template('login.html', form=form)
+    
+    @app.route('/logout')
+    @login_required
+    def logout():
+        logout_user()
+        flash('You have been logged out.', 'info')
+        return redirect(url_for('login'))
+    
+    # ==================== PROFILE ====================
+    
+    @app.route('/profile')
+    @login_required
+    def profile():
+        """View user profile"""
+        return render_template('profile.html', user=current_user)
+    
+    @app.route('/profile/edit', methods=['GET', 'POST'])
+    @login_required
+    def edit_profile():
+        """Edit user profile"""
+        from forms import LoginForm  # Reuse for simplicity
+        if request.method == 'POST':
+            new_email = request.form.get('email')
+            if new_email and new_email != current_user.email:
+                current_user.email = new_email
+                db.session.commit()
+                flash('Profile updated successfully!', 'success')
+            return redirect(url_for('profile'))
+        return render_template('edit_profile.html', user=current_user)
+    
+    # ==================== ADMIN ====================
+    
+    @app.route('/admin')
+    @login_required
+    def admin_dashboard():
+        """Admin dashboard"""
+        if not current_user.is_admin:
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        # Get all users for admin overview
+        all_users = User.query.all()
+        pending_users = User.query.filter_by(is_active=False).all()
+        return render_template('admin_dashboard.html', 
+                             all_users=all_users, 
+                             pending_users=pending_users)
+    
+    @app.route('/admin/requests')
+    @login_required
+    def admin_requests():
+        """Admin - view pending account requests"""
+        if not current_user.is_admin:
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        pending_users = User.query.filter_by(is_active=False).all()
+        approved_users = User.query.filter_by(is_active=True).all()
+        return render_template('admin_requests.html', 
+                             pending_users=pending_users,
+                             approved_users=approved_users)
+    
+    @app.route('/admin/approve/<int:user_id>', methods=['POST'])
+    @login_required
+    def approve_user(user_id):
+        """Approve a pending user"""
+        if not current_user.is_admin:
+            flash('Access denied.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        user = User.query.get_or_404(user_id)
+        user.is_active = True
+        db.session.commit()
+        flash(f'User {user.email} has been approved!', 'success')
+        return redirect(url_for('admin_requests'))
+    
+    @app.route('/admin/reject/<int:user_id>', methods=['POST'])
+    @login_required
+    def reject_user(user_id):
+        """Reject/delete a pending user"""
+        if not current_user.is_admin:
+            flash('Access denied.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        user = User.query.get_or_404(user_id)
+        email = user.email
+        db.session.delete(user)
+        db.session.commit()
+        flash(f'User {email} has been rejected and removed.', 'warning')
+        return redirect(url_for('admin_requests'))
+    
+    # ==================== LANDING PAGE & DASHBOARD ====================
+    
+    @app.route('/')
+    def index():
+        """Landing page - redirect to dashboard if logged in"""
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard'))
+        return render_template('landing.html')
+    
+    @app.route('/landing')
+    def landing():
+        """Landing page"""
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard'))
+        return render_template('landing.html')
+    
+    @app.route('/dashboard')
+    @login_required
+    def dashboard():
+        """User dashboard - list all buildings"""
+        page = request.args.get('page', 1, type=int)
+        buildings = Building.query.filter_by(created_by_id=current_user.id).paginate(page=page, per_page=10)
+        return render_template('dashboard.html', buildings=buildings)
+    
+    # ==================== STEP 1: BUILDING INFORMATION ====================
+    
+    @app.route('/building/new', methods=['GET', 'POST'])
+    @login_required
+    def building_new():
+        """Create new building (Step 1)"""
+        from forms import BuildingHeaderForm
+        from datetime import date
+        
+        form = BuildingHeaderForm()
+        
+        if form.validate_on_submit():
+            # Generate unique building code
+            code = f"BLD-{current_user.id}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            
+            building = Building(
+                building_code=code,
+                project_name=form.project_name.data,
+                city=form.city.data,
+                address=form.address.data,
+                latitude=form.latitude.data,
+                longitude=form.longitude.data,
+                building_type=form.building_type.data,
+                primary_use=form.primary_use.data,
+                gross_built_area_m2=form.gross_built_area_m2.data,
+                number_of_floors=form.number_of_floors.data,
+                construction_year=form.construction_year.data,
+                last_major_renovation_date=form.last_major_renovation_date.data,
+                estimated_life_time_years=form.estimated_life_time_years.data,
+                planned_asset_retirement_year=form.planned_asset_retirement_year.data,
+                fm_contractor=form.fm_contractor.data,
+                inspection_date=form.inspection_date.data,
+                current_year=form.current_year.data,
+                system_threshold_percent=form.system_threshold_percent.data,
+                created_by_id=current_user.id,
+                status='Draft'
+            )
+            db.session.add(building)
+            db.session.commit()
+            
+            # Create initial assessment record
+            assessment = Assessment(
+                building_id=building.id,
+                assessment_code=f"ASS-{building.id}-001",
+                status='Open'
+            )
+            db.session.add(assessment)
+            db.session.commit()
+            
+            _log_audit('buildings', building.id, 'CREATE', None, building.as_dict())
+            
+            flash('Building created! Now add assessment items.', 'success')
+            return redirect(url_for('building_view', building_id=building.id))
+        
+        return render_template('building_header.html', form=form)
+    
+    @app.route('/building/<int:building_id>')
+    @login_required
+    def building_view(building_id):
+        """View building and manage workflow"""
+        building = Building.query.get_or_404(building_id)
+        
+        # Role-based access check
+        if building.created_by_id != current_user.id and current_user.role != 'Admin':
+            flash('Access denied', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        # Get workflow progress
+        assessment = Assessment.query.filter_by(building_id=building_id).first()
+        compliance = ComplianceChecklist.query.filter_by(building_id=building_id).first()
+        system_scores = SystemScore.query.filter_by(building_id=building_id).all()
+        tests = TestRegister.query.filter_by(building_id=building_id).count()
+        capas = CAPARegister.query.filter_by(building_id=building_id).count()
+        dashboard = ExecutiveDashboardSummary.query.filter_by(building_id=building_id).first()
+        
+        return render_template('building_view.html', 
+            building=building, 
+            assessment=assessment,
+            compliance=compliance,
+            system_scores=system_scores,
+            tests=tests,
+            capas=capas,
+            dashboard=dashboard
+        )
+    
+    # ==================== STEP 2: ASSESSMENT ITEMS ====================
+    
+    @app.route('/building/<int:building_id>/assessment/items')
+    @login_required
+    def assessment_items_list(building_id):
+        """List all assessment items for building"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        page = request.args.get('page', 1, type=int)
+        items = AssessmentItem.query.join(Assessment).filter(
+            Assessment.building_id == building_id
+        ).paginate(page=page, per_page=20)
+        
+        return render_template('assessment_items_list.html', building=building, items=items)
+    
+    @app.route('/building/<int:building_id>/assessment/item/new', methods=['GET', 'POST'])
+    @login_required
+    def assessment_item_new(building_id):
+        """Add new assessment item"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        from forms import AssessmentItemForm
+        form = AssessmentItemForm()
+        
+        # Populate dropdowns
+        form.system.choices = [(0, '-- Select System --')] + [(s.id, s.system_name) for s in System.query.filter_by(active=True).all()]
+        
+        # Get subsystems and components for the selected system (for form resubmission)
+        selected_system = request.form.get('system', type=int) or 0
+        selected_subsystem = request.form.get('subsystem', type=int) or 0
+        
+        if selected_system > 0:
+            form.subsystem.choices = [(0, '-- Select Subsystem --')] + [(s.id, s.subsystem_name) for s in Subsystem.query.filter_by(system_id=selected_system, active=True).all()]
+        else:
+            form.subsystem.choices = [(0, '-- Select System First --')]
+        
+        if selected_subsystem > 0:
+            form.component.choices = [(0, '-- Select Component --')] + [(c.id, c.component_name) for c in Component.query.filter_by(subsystem_id=selected_subsystem, active=True).all()]
+        else:
+            form.component.choices = [(0, '-- Select Subsystem First --')]
+        
+        form.rate.choices = [(r.rate_value, f"{r.rate_value} - {r.description}") 
+                             for r in Rate.query.filter_by(active=True).order_by(Rate.rate_value).all()]
+        form.item_weight.choices = [(w.weight_value, str(w.weight_value)) 
+                                     for w in Weight.query.filter_by(active=True).all()]
+        form.responsibility.choices = [(0, '-- Select --')] + [(r.id, r.name) 
+                                        for r in Responsibility.query.filter_by(active=True).all()]
+        
+        if request.method == 'POST':
+            # Debug: print form errors if any
+            if not form.validate():
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        flash(f'{field}: {error}', 'danger')
+                return render_template('assessment_item_form.html', form=form, building=building)
+            
+            assessment = Assessment.query.filter_by(building_id=building_id).first()
+            if not assessment:
+                # Auto-create assessment if not exists
+                assessment = Assessment(
+                    building_id=building_id,
+                    assessment_code=f"ASM-{building_id}-001",
+                    status='Open'
+                )
+                db.session.add(assessment)
+                db.session.commit()
+            
+            # Generate item code if not provided
+            item_code = form.item_code.data
+            if not item_code:
+                count = AssessmentItem.query.filter_by(assessment_id=assessment.id).count()
+                item_code = f"AI-{count + 1:03d}"
+            
+            item = AssessmentItem(
+                assessment_id=assessment.id,
+                system_id=form.system.data if form.system.data > 0 else None,
+                subsystem_id=form.subsystem.data if form.subsystem.data and form.subsystem.data > 0 else None,
+                component_id=form.component.data if form.component.data and form.component.data > 0 else None,
+                item_code=item_code,
+                inspection_item=form.inspection_item.data or '',
+                criteria=form.criteria.data or '',
+                test_method=form.test_method.data or '',
+                asset_tag_no=form.asset_tag_no.data,
+                snag_location=form.snag_location.data,
+                snag_evidence_ref=form.snag_evidence_ref.data,
+                snag_evidence_type=form.snag_evidence_type.data,
+                rate=form.rate.data,
+                item_weight=form.item_weight.data,
+                risk_criticality=form.risk_criticality.data,
+                responsibility_id=form.responsibility.data if form.responsibility.data and form.responsibility.data > 0 else None,
+                priority=form.priority.data,
+                status=form.status.data,
+                due_date=form.due_date.data,
+                remarks=form.remarks.data
+            )
+            
+            # Calculate scores server-side
+            CalculationService.calculate_assessment_item_scores(item)
+            
+            db.session.add(item)
+            db.session.commit()
+            
+            # Recalculate system metrics
+            if item.system_id:
+                CalculationService.calculate_system_metrics(building_id, item.system_id)
+            CalculationService.compute_executive_dashboard(building_id)
+            db.session.commit()
+            
+            _log_audit('assessment_items', item.id, 'CREATE', None, item.as_dict())
+            
+            flash('Assessment item added!', 'success')
+            return redirect(url_for('assessment_items_list', building_id=building_id))
+        
+        return render_template('assessment_item_form.html', form=form, building=building)
+    
+    # ==================== STEP 3: COMPLIANCE CHECKLIST ====================
+    
+    @app.route('/building/<int:building_id>/compliance')
+    @login_required
+    def compliance_checklist(building_id):
+        """Step 3: Compliance checklist"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        compliance = ComplianceChecklist.query.filter_by(building_id=building_id).first()
+        compliance_items = []
+        if compliance:
+            compliance_items = ComplianceItem.query.filter_by(checklist_id=compliance.id).all()
+        
+        areas = ComplianceArea.query.filter_by(active=True).all()
+        
+        # Calculate area status based on items - determine overall status per area
+        area_status = {}
+        for area in areas:
+            area_items = [item for item in compliance_items if item.compliance_area_id == area.id]
+            if area_items:
+                # Determine overall status: if any "No" -> No, if all "Yes" -> Yes, otherwise Partial
+                statuses = [item.status for item in area_items if item.status]
+                if 'No' in statuses:
+                    area_status[area.id] = 'No'
+                elif all(s == 'Yes' for s in statuses):
+                    area_status[area.id] = 'Yes'
+                elif statuses:
+                    area_status[area.id] = 'Partial'
+        
+        return render_template('compliance_checklist.html', 
+            building=building, 
+            compliance=compliance,
+            compliance_items=compliance_items,
+            areas=areas,
+            area_status=area_status
+        )
+    
+    @app.route('/building/<int:building_id>/compliance/status', methods=['POST'])
+    @login_required
+    def compliance_status_update(building_id):
+        """Update compliance area statuses (bulk update)"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        # Get or create checklist
+        checklist = ComplianceChecklist.query.filter_by(building_id=building_id).first()
+        if not checklist:
+            checklist = ComplianceChecklist(
+                building_id=building_id,
+                checklist_code=f"CCL-{building_id}-001",
+                status='Open'
+            )
+            db.session.add(checklist)
+            db.session.commit()
+        
+        areas = ComplianceArea.query.filter_by(active=True).all()
+        
+        # Process each area status from form
+        for area in areas:
+            status = request.form.get(f'area_status_{area.id}')
+            if status:
+                # Find existing item for this area or create new one
+                existing_item = ComplianceItem.query.filter_by(
+                    checklist_id=checklist.id,
+                    compliance_area_id=area.id
+                ).first()
+                
+                if existing_item:
+                    existing_item.status = status
+                    existing_item.updated_at = db.func.now()
+                else:
+                    # Create a default compliance item for this area
+                    count = ComplianceItem.query.filter_by(checklist_id=checklist.id).count()
+                    item_code = f"GC-{count + 1:03d}"
+                    item = ComplianceItem(
+                        checklist_id=checklist.id,
+                        compliance_area_id=area.id,
+                        item_code=item_code,
+                        requirement=f"{area.area_name} - Overall Status",
+                        status=status
+                    )
+                    db.session.add(item)
+        
+        db.session.commit()
+        flash('Compliance status saved successfully!', 'success')
+        return redirect(url_for('compliance_checklist', building_id=building_id))
+    
+    @app.route('/building/<int:building_id>/compliance/item/<int:item_id>/edit', methods=['GET', 'POST'])
+    @login_required
+    def compliance_item_edit(building_id, item_id):
+        """Edit existing compliance item"""
+        import os
+        from werkzeug.utils import secure_filename
+        
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        item = ComplianceItem.query.get_or_404(item_id)
+        areas = ComplianceArea.query.filter_by(active=True).all()
+        
+        from forms import ComplianceItemForm
+        form = ComplianceItemForm()
+        
+        if request.method == 'POST':
+            item.compliance_area_id = int(request.form.get('compliance_area_id')) if request.form.get('compliance_area_id') else item.compliance_area_id
+            item.requirement = request.form.get('requirement', item.requirement)
+            item.status = request.form.get('status', item.status)
+            item.evidence_ref = request.form.get('evidence_ref')
+            item.remarks = request.form.get('remarks')
+            
+            # Handle file upload
+            if 'evidence_file' in request.files:
+                file = request.files['evidence_file']
+                if file and file.filename:
+                    filename = secure_filename(file.filename)
+                    upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'compliance', str(building_id))
+                    os.makedirs(upload_dir, exist_ok=True)
+                    import time
+                    timestamped_filename = f"{int(time.time())}_{filename}"
+                    file_path = os.path.join(upload_dir, timestamped_filename)
+                    file.save(file_path)
+                    item.evidence_file_path = f"uploads/compliance/{building_id}/{timestamped_filename}"
+            
+            db.session.commit()
+            flash('Compliance item updated!', 'success')
+            return redirect(url_for('compliance_checklist', building_id=building_id))
+        
+        return render_template('compliance_item_edit.html', form=form, building=building, item=item, areas=areas)
+    
+    @app.route('/building/<int:building_id>/compliance/item/<int:item_id>/delete')
+    @login_required
+    def compliance_item_delete(building_id, item_id):
+        """Delete compliance item"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        item = ComplianceItem.query.get_or_404(item_id)
+        db.session.delete(item)
+        db.session.commit()
+        
+        flash('Compliance item deleted!', 'success')
+        return redirect(url_for('compliance_checklist', building_id=building_id))
+    
+    @app.route('/compliance/document/<int:item_id>')
+    @login_required
+    def download_compliance_doc(item_id):
+        """Download compliance document"""
+        from flask import send_from_directory
+        import os
+        
+        item = ComplianceItem.query.get_or_404(item_id)
+        
+        if not item.evidence_file_path:
+            flash('No document attached to this item.', 'warning')
+            return redirect(request.referrer or url_for('dashboard'))
+        
+        # Extract directory and filename from path
+        file_path = os.path.join(app.root_path, 'static', item.evidence_file_path)
+        directory = os.path.dirname(file_path)
+        filename = os.path.basename(file_path)
+        
+        if os.path.exists(file_path):
+            return send_from_directory(directory, filename, as_attachment=True)
+        else:
+            flash('Document file not found.', 'error')
+            return redirect(request.referrer or url_for('dashboard'))
+    
+    # ==================== STEP 4: SYSTEM SCORING ====================
+    
+    @app.route('/building/<int:building_id>/system-scoring')
+    @login_required
+    def system_scoring(building_id):
+        """Step 4: System scoring overview"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        system_scores = SystemScore.query.filter_by(building_id=building_id).all()
+        systems = System.query.filter_by(active=True).all()
+        
+        return render_template('system_scoring.html', 
+            building=building, 
+            system_scores=system_scores,
+            systems=systems
+        )
+    
+    # ==================== STEP 5: TEST REGISTER ====================
+    
+    @app.route('/building/<int:building_id>/tests')
+    @login_required
+    def test_register(building_id):
+        """Step 5: Test register"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        page = request.args.get('page', 1, type=int)
+        tests = TestRegister.query.filter_by(building_id=building_id).paginate(page=page, per_page=20)
+        
+        return render_template('test_register.html', 
+            building=building, 
+            tests=tests
+        )
+    
+    # ==================== STEP 6: CAPA REGISTER ====================
+    
+    @app.route('/building/<int:building_id>/capa')
+    @login_required
+    def capa_register(building_id):
+        """Step 6: CAPA register"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        page = request.args.get('page', 1, type=int)
+        capas = CAPARegister.query.filter_by(building_id=building_id).paginate(page=page, per_page=20)
+        
+        return render_template('capa_register.html', 
+            building=building, 
+            capas=capas
+        )
+    
+    # ==================== STEP 7: EXECUTIVE DASHBOARD ====================
+    
+    @app.route('/building/<int:building_id>/dashboard')
+    @login_required
+    def executive_dashboard(building_id):
+        """Step 7: Executive dashboard view"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        # Get dashboard summary (computed)
+        dashboard = ExecutiveDashboardSummary.query.filter_by(building_id=building_id).first()
+        if not dashboard:
+            dashboard = CalculationService.compute_executive_dashboard(building_id)
+            db.session.commit()
+        
+        # Get system scores
+        system_scores = SystemScore.query.filter_by(building_id=building_id).all()
+        
+        return render_template('executive_dashboard.html', 
+            building=building, 
+            dashboard=dashboard,
+            system_scores=system_scores
+        )
+    
+    # ==================== API ENDPOINTS ====================
+    
+    @app.route('/api/subsystems/<int:system_id>')
+    @login_required
+    def api_get_subsystems(system_id):
+        """Get subsystems for cascading dropdown"""
+        subsystems = Subsystem.query.filter_by(system_id=system_id, active=True).order_by(Subsystem.order).all()
+        return jsonify([{'id': s.id, 'name': s.subsystem_name} for s in subsystems])
+    
+    @app.route('/api/components/<int:subsystem_id>')
+    @login_required
+    def api_get_components(subsystem_id):
+        """Get components for cascading dropdown"""
+        components = Component.query.filter_by(subsystem_id=subsystem_id, active=True).order_by(Component.order).all()
+        return jsonify([{'id': c.id, 'name': c.component_name} for c in components])
+    
+    @app.route('/api/systems')
+    @login_required
+    def api_get_systems():
+        """Get all active systems"""
+        systems = System.query.filter_by(active=True).order_by(System.order).all()
+        return jsonify([{'id': s.id, 'code': s.system_code, 'name': s.system_name} for s in systems])
+    
+    # ==================== STEP 2: ASSESSMENT ITEM EDIT/DELETE ====================
+    
+    @app.route('/building/<int:building_id>/assessment/item/<int:item_id>/edit', methods=['GET', 'POST'])
+    @login_required
+    def assessment_item_edit(building_id, item_id):
+        """Edit assessment item"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        item = AssessmentItem.query.get_or_404(item_id)
+        
+        from forms import AssessmentItemForm
+        form = AssessmentItemForm(obj=item)
+        
+        # Populate dropdowns
+        form.system.choices = [(0, '-- Select System --')] + [(s.id, s.system_name) for s in System.query.filter_by(active=True).all()]
+        form.subsystem.choices = [(0, '-- Select System First --')]
+        form.component.choices = [(0, '-- Select Subsystem First --')]
+        form.rate.choices = [(r.rate_value, f"{r.rate_value} - {r.description}") 
+                             for r in Rate.query.filter_by(active=True).order_by(Rate.rate_value).all()]
+        form.item_weight.choices = [(w.weight_value, str(w.weight_value)) 
+                                     for w in Weight.query.filter_by(active=True).all()]
+        form.responsibility.choices = [(0, '-- Select --')] + [(r.id, r.name) 
+                                        for r in Responsibility.query.filter_by(active=True).all()]
+        
+        if form.validate_on_submit():
+            old_data = item.as_dict()
+            
+            item.system_id = form.system.data
+            item.rate = form.rate.data
+            item.item_weight = form.item_weight.data
+            item.risk_criticality = form.risk_criticality.data
+            item.responsibility_id = form.responsibility.data if form.responsibility.data > 0 else None
+            item.priority = form.priority.data
+            item.status = form.status.data
+            item.due_date = form.due_date.data
+            item.remarks = form.remarks.data
+            
+            # Recalculate scores
+            CalculationService.calculate_assessment_item_scores(item)
+            db.session.commit()
+            
+            # Recalculate system metrics
+            CalculationService.calculate_system_metrics(building_id, item.system_id)
+            CalculationService.compute_executive_dashboard(building_id)
+            db.session.commit()
+            
+            _log_audit('assessment_items', item.id, 'UPDATE', old_data, item.as_dict())
+            
+            flash('Assessment item updated!', 'success')
+            return redirect(url_for('assessment_items_list', building_id=building_id))
+        
+        return render_template('assessment_item_form.html', form=form, building=building, item=item, edit_mode=True)
+    
+    @app.route('/building/<int:building_id>/assessment/item/<int:item_id>/delete', methods=['POST'])
+    @login_required
+    def assessment_item_delete(building_id, item_id):
+        """Delete assessment item"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        item = AssessmentItem.query.get_or_404(item_id)
+        system_id = item.system_id
+        
+        _log_audit('assessment_items', item.id, 'DELETE', item.as_dict(), None)
+        
+        db.session.delete(item)
+        db.session.commit()
+        
+        # Recalculate system metrics
+        CalculationService.calculate_system_metrics(building_id, system_id)
+        CalculationService.compute_executive_dashboard(building_id)
+        db.session.commit()
+        
+        flash('Assessment item deleted!', 'warning')
+        return redirect(url_for('assessment_items_list', building_id=building_id))
+    
+    # ==================== STEP 3: COMPLIANCE CRUD ====================
+    
+    @app.route('/building/<int:building_id>/compliance/item/new', methods=['GET', 'POST'])
+    @app.route('/building/<int:building_id>/compliance/item/new/<int:area_id>', methods=['GET', 'POST'])
+    @login_required
+    def compliance_item_new(building_id, area_id=None):
+        """Add new compliance item"""
+        import os
+        from werkzeug.utils import secure_filename
+        
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        from forms import ComplianceItemForm
+        form = ComplianceItemForm()
+        
+        # Get or create checklist
+        checklist = ComplianceChecklist.query.filter_by(building_id=building_id).first()
+        if not checklist:
+            checklist = ComplianceChecklist(
+                building_id=building_id,
+                checklist_code=f"CCL-{building_id}-001",
+                status='Open'
+            )
+            db.session.add(checklist)
+            db.session.commit()
+        
+        areas = ComplianceArea.query.filter_by(active=True).all()
+        
+        if request.method == 'POST':
+            area_id_form = request.form.get('compliance_area_id')
+            requirement = request.form.get('requirement')
+            status = request.form.get('status')
+            evidence_ref = request.form.get('evidence_ref')
+            remarks = request.form.get('remarks')
+            
+            # Generate item code
+            count = ComplianceItem.query.filter_by(checklist_id=checklist.id).count()
+            item_code = f"GC-{count + 1:03d}"
+            
+            # Handle file upload
+            evidence_file_path = None
+            if 'evidence_file' in request.files:
+                file = request.files['evidence_file']
+                if file and file.filename:
+                    filename = secure_filename(file.filename)
+                    # Create upload directory if not exists
+                    upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'compliance', str(building_id))
+                    os.makedirs(upload_dir, exist_ok=True)
+                    # Add timestamp to filename to avoid conflicts
+                    import time
+                    timestamped_filename = f"{int(time.time())}_{filename}"
+                    file_path = os.path.join(upload_dir, timestamped_filename)
+                    file.save(file_path)
+                    # Store relative path for serving
+                    evidence_file_path = f"uploads/compliance/{building_id}/{timestamped_filename}"
+            
+            item = ComplianceItem(
+                checklist_id=checklist.id,
+                compliance_area_id=int(area_id_form) if area_id_form else None,
+                item_code=item_code,
+                requirement=requirement or '',
+                status=status,
+                evidence_ref=evidence_ref,
+                remarks=remarks,
+                evidence_file_path=evidence_file_path
+            )
+            db.session.add(item)
+            db.session.commit()
+            
+            flash('Compliance item added!', 'success')
+            return redirect(url_for('compliance_checklist', building_id=building_id))
+        
+        return render_template('compliance_item_form.html', form=form, building=building, areas=areas, selected_area_id=area_id)
+    
+    # ==================== STEP 4: SYSTEM SCORING UPDATE ====================
+    
+    @app.route('/building/<int:building_id>/system-scoring/update', methods=['POST'])
+    @login_required
+    def system_scoring_update(building_id):
+        """Update system weights"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        # Get all weights from form
+        total_weight = 0
+        updates = []
+        
+        for key, value in request.form.items():
+            if key.startswith('weight_'):
+                system_id = int(key.replace('weight_', ''))
+                weight = float(value) if value else 0
+                total_weight += weight
+                updates.append((system_id, weight))
+        
+        # Validate total weight = 100
+        if abs(total_weight - 100) > 0.01:
+            flash(f'Total weight must equal 100%. Current total: {total_weight:.1f}%', 'danger')
+            return redirect(url_for('system_scoring', building_id=building_id))
+        
+        # Update weights
+        for system_id, weight in updates:
+            score = SystemScore.query.filter_by(building_id=building_id, system_id=system_id).first()
+            if score:
+                score.weight = weight
+                score.calculate_weighted_score()
+        
+        db.session.commit()
+        
+        # Recalculate dashboard
+        CalculationService.compute_executive_dashboard(building_id)
+        db.session.commit()
+        
+        flash('System weights updated successfully!', 'success')
+        return redirect(url_for('system_scoring', building_id=building_id))
+    
+    # ==================== STEP 5: TEST REGISTER CRUD ====================
+    
+    @app.route('/building/<int:building_id>/tests/new', methods=['GET', 'POST'])
+    @login_required
+    def test_register_new(building_id):
+        """Add new test record"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        from forms import TestRegisterForm
+        form = TestRegisterForm()
+        form.system.choices = [(s.id, s.system_name) for s in System.query.filter_by(active=True).all()]
+        
+        if form.validate_on_submit():
+            test = TestRegister(
+                building_id=building_id,
+                system_id=form.system.data,
+                test_id=form.test_id.data,
+                test_name=form.test_name.data,
+                standard_reference=form.standard_reference.data,
+                instrument=form.instrument.data,
+                locations_sampling=form.locations_sampling.data,
+                acceptance_criteria=form.acceptance_criteria.data,
+                readings=form.readings.data,
+                result=form.result.data,
+                test_date=form.test_date.data,
+                witness=form.witness.data,
+                evidence_ref=form.evidence_ref.data,
+                remarks=form.remarks.data
+            )
+            db.session.add(test)
+            db.session.commit()
+            
+            # Recalculate dashboard
+            CalculationService.compute_executive_dashboard(building_id)
+            db.session.commit()
+            
+            flash('Test record added!', 'success')
+            return redirect(url_for('test_register', building_id=building_id))
+        
+        return render_template('test_register_form.html', form=form, building=building)
+    
+    # ==================== STEP 6: CAPA CRUD ====================
+    
+    @app.route('/building/<int:building_id>/capa/new', methods=['GET', 'POST'])
+    @login_required
+    def capa_register_new(building_id):
+        """Add new CAPA record"""
+        building = Building.query.get_or_404(building_id)
+        _check_access(building)
+        
+        from forms import CAPARegisterForm
+        form = CAPARegisterForm()
+        form.system.choices = [(s.id, s.system_name) for s in System.query.filter_by(active=True).all()]
+        form.responsibility.choices = [(0, '-- Select --')] + [(r.id, r.name) 
+                                        for r in Responsibility.query.filter_by(active=True).all()]
+        
+        # Auto-generate CAPA ID
+        count = CAPARegister.query.filter_by(building_id=building_id).count()
+        suggested_id = f"CAPA-{building_id:03d}-{count + 1:04d}"
+        
+        if form.validate_on_submit():
+            capa = CAPARegister(
+                building_id=building_id,
+                system_id=form.system.data,
+                capa_id=form.capa_id.data or suggested_id,
+                priority=form.priority.data,
+                finding=form.finding.data,
+                required_action=form.required_action.data,
+                responsibility_id=form.responsibility.data if form.responsibility.data > 0 else None,
+                due_date=form.due_date.data,
+                estimated_cost=form.estimated_cost.data,
+                status=form.status.data,
+                verification_evidence=form.verification_evidence.data,
+                verification_date=form.verification_date.data,
+                remarks=form.remarks.data
+            )
+            db.session.add(capa)
+            db.session.commit()
+            
+            # Recalculate dashboard
+            CalculationService.compute_executive_dashboard(building_id)
+            db.session.commit()
+            
+            flash('CAPA record added!', 'success')
+            return redirect(url_for('capa_register', building_id=building_id))
+        
+        return render_template('capa_register_form.html', form=form, building=building, suggested_id=suggested_id)
+    
+    # ==================== UTILITY FUNCTIONS ====================
+    
+    def _check_access(building):
+        """Check if current user has access to building"""
+        if building.created_by_id != current_user.id and current_user.role != 'Admin':
+            flash('Access denied', 'danger')
+            redirect(url_for('dashboard'))
+    
+    def _log_audit(table, record_id, action, old_vals, new_vals):
+        """Log audit event"""
+        audit = AuditLog(
+            user_id=current_user.id,
+            table_name=table,
+            record_id=record_id,
+            action=action,
+            old_values=old_vals,
+            new_values=new_vals,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(audit)
     
     return app
 

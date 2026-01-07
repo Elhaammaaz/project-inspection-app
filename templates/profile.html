@@ -3,502 +3,89 @@
 {% block title %}My Profile{% endblock %}
 
 {% block content %}
-<div class="profile-container">
-    <div class="profile-header animate-fade-in">
-        <h1 class="profile-title">My Profile</h1>
-        <p class="profile-subtitle">Manage your account information and settings</p>
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-user-circle"></i> My Profile</h1>
+            <p class="text-muted">Manage your account information and settings</p>
+        </div>
     </div>
 
-    <div class="profile-content">
-        <!-- Profile Information Card -->
-        <div class="card profile-card animate-slide-up">
-            <div class="card-header">
-                <h2>Account Information</h2>
-                <a href="{{ url_for('edit_profile') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-edit"></i> Edit Profile
-                </a>
-            </div>
-            <div class="card-body">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <label>Email</label>
-                        <p class="info-value">{{ user.email }}</p>
-                    </div>
-                    <div class="info-item">
-                        <label>Full Name</label>
-                        <p class="info-value">{{ user.full_name or 'Not set' }}</p>
-                    </div>
-                    <div class="info-item">
-                        <label>Phone</label>
-                        <p class="info-value">{{ profile.phone or 'Not set' }}</p>
-                    </div>
-                    <div class="info-item">
-                        <label>Department</label>
-                        <p class="info-value">{{ profile.department or 'Not set' }}</p>
-                    </div>
-                    <div class="info-item">
-                        <label>Job Title</label>
-                        <p class="info-value">{{ profile.job_title or 'Not set' }}</p>
-                    </div>
-                    <div class="info-item">
-                        <label>Office Location</label>
-                        <p class="info-value">{{ profile.office_location or 'Not set' }}</p>
-                    </div>
-                    <div class="info-item">
-                        <label>Account Status</label>
-                        <p class="info-value">
-                            {% if user.active %}
-                                <span class="badge badge-success">Active</span>
-                            {% else %}
-                                <span class="badge badge-warning">Pending Approval</span>
-                            {% endif %}
-                        </p>
-                    </div>
-                    <div class="info-item">
-                        <label>Member Since</label>
-                        <p class="info-value">{{ user.created_at.strftime('%B %d, %Y') }}</p>
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Profile Information Card -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-id-card"></i> Account Information</h5>
+                    <a href="{{ url_for('edit_profile') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Username</label>
+                            <p class="mb-0 fw-bold">{{ user.username }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Email</label>
+                            <p class="mb-0 fw-bold">{{ user.email }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Role</label>
+                            <p class="mb-0">
+                                <span class="badge bg-{% if user.role == 'Admin' %}danger{% elif user.role == 'ProjectManager' %}warning{% else %}secondary{% endif %}">
+                                    {{ user.role }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Account Status</label>
+                            <p class="mb-0">
+                                {% if user.is_active %}
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> Active</span>
+                                {% else %}
+                                    <span class="badge bg-warning"><i class="fas fa-clock"></i> Pending Approval</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Member Since</label>
+                            <p class="mb-0">{{ user.created_at.strftime('%B %d, %Y') }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Last Updated</label>
+                            <p class="mb-0">{{ user.updated_at.strftime('%B %d, %Y') if user.updated_at else 'Never' }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Power BI Report Access Card removed -->
-        <!-- Pending Changes Card -->
-        {% if profile_changes %}
-            <div class="card changes-card animate-slide-up" style="animation-delay: 0.2s;">
+        
+        <div class="col-md-4">
+            <!-- Quick Actions -->
+            <div class="card">
                 <div class="card-header">
-                    <h2>Pending Profile Changes</h2>
-                    <span class="badge badge-info">{{ profile_changes|length }}</span>
+                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <div class="changes-list">
-                        {% for change in profile_changes %}
-                            <div class="change-item">
-                                <div class="change-header">
-                                    <span class="field-name">{{ change.field_name.replace('_', ' ').title() }}</span>
-                                    {% if change.status == 'pending' %}
-                                        <span class="badge badge-warning">Pending Review</span>
-                                    {% elif change.status == 'approved' %}
-                                        <span class="badge badge-success">Approved</span>
-                                    {% else %}
-                                        <span class="badge badge-danger">Rejected</span>
-                                    {% endif %}
-                                </div>
-                                <div class="change-details">
-                                    <div class="old-value">
-                                        <strong>Current:</strong> {{ change.old_value or 'Not set' }}
-                                    </div>
-                                    <div class="new-value">
-                                        <strong>Requested:</strong> {{ change.new_value }}
-                                    </div>
-                                    {% if change.status == 'rejected' and change.rejection_reason %}
-                                        <div class="rejection-reason">
-                                            <strong>Reason:</strong> {{ change.rejection_reason }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="change-date">{{ change.requested_at.strftime('%B %d, %Y') }}</div>
-                            </div>
-                        {% endfor %}
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-home"></i> Go to Dashboard
+                        </a>
+                        <a href="{{ url_for('building_new') }}" class="btn btn-outline-success">
+                            <i class="fas fa-plus"></i> Create New Building
+                        </a>
+                        <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-cog"></i> Edit Settings
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
                     </div>
                 </div>
-            </div>
-        {% endif %}
-
-        <!-- Settings Card -->
-        <div class="card settings-card animate-slide-up" style="animation-delay: 0.3s;">
-            <div class="card-header">
-                <h2>Preferences</h2>
-            </div>
-            <div class="card-body">
-                <div class="settings-list">
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h5>Theme</h5>
-                            <p>{{ profile.theme.title() }} Mode</p>
-                        </div>
-                        <span class="setting-value">
-                            <i class="fas fa-{% if profile.theme == 'dark' %}moon{% else %}sun{% endif %}"></i>
-                        </span>
-                    </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h5>Notifications</h5>
-                            <p>{% if profile.notifications_enabled %}Enabled{% else %}Disabled{% endif %}</p>
-                        </div>
-                        <span class="setting-value">
-                            <i class="fas fa-bell"></i>
-                        </span>
-                    </div>
-                </div>
-                <a href="{{ url_for('edit_profile') }}" class="btn btn-secondary btn-block mt-3">
-                    Update Settings
-                </a>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    .profile-container {
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    .profile-header {
-        margin-bottom: 30px;
-        text-align: center;
-    }
-
-    .profile-title {
-        font-size: 2.5rem;
-        margin-bottom: 10px;
-        color: #2c3e50;
-    }
-
-    .profile-subtitle {
-        font-size: 1rem;
-        color: #7f8c8d;
-    }
-
-    .profile-content {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 25px;
-    }
-
-    .card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .card:hover {
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-        transform: translateY(-2px);
-    }
-
-    .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .card-header h2 {
-        margin: 0;
-        font-size: 1.3rem;
-    }
-
-    .card-body {
-        padding: 25px;
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-    }
-
-    .info-item {
-        padding: 15px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-
-    .info-item:hover {
-        background: #e9ecef;
-        transform: translateX(5px);
-    }
-
-    .info-item label {
-        display: block;
-        font-weight: 600;
-        color: #495057;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
-    }
-
-    .info-value {
-        margin: 0;
-        font-size: 1rem;
-        color: #2c3e50;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .badge-success {
-        background-color: #28a745;
-        color: white;
-    }
-
-    .badge-warning {
-        background-color: #ffc107;
-        color: #333;
-    }
-
-    .badge-danger {
-        background-color: #dc3545;
-        color: white;
-    }
-
-    .badge-info {
-        background-color: #17a2b8;
-        color: white;
-    }
-
-    .request-list {
-        margin-top: 15px;
-    }
-
-    .request-item {
-        padding: 12px;
-        background: #f0f7ff;
-        border-left: 4px solid #17a2b8;
-        margin-bottom: 10px;
-        border-radius: 4px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .request-date {
-        font-size: 0.9rem;
-        color: #7f8c8d;
-    }
-
-    .reason {
-        margin-top: 5px;
-        font-size: 0.85rem;
-        color: #e74c3c;
-    }
-
-    .changes-list {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .change-item {
-        padding: 15px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border-left: 4px solid #ffc107;
-    }
-
-    .change-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .field-name {
-        font-weight: 600;
-        color: #2c3e50;
-    }
-
-    .change-details {
-        margin: 10px 0;
-        font-size: 0.9rem;
-    }
-
-    .old-value, .new-value, .rejection-reason {
-        padding: 8px;
-        margin: 5px 0;
-        background: white;
-        border-radius: 4px;
-    }
-
-    .change-date {
-        font-size: 0.85rem;
-        color: #7f8c8d;
-        margin-top: 10px;
-    }
-
-    .settings-list {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .setting-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-
-    .setting-item:hover {
-        background: #e9ecef;
-        transform: translateX(5px);
-    }
-
-    .setting-info h5 {
-        margin: 0 0 5px 0;
-        color: #2c3e50;
-    }
-
-    .setting-info p {
-        margin: 0;
-        color: #7f8c8d;
-        font-size: 0.9rem;
-    }
-
-    .setting-value {
-        font-size: 1.5rem;
-        color: #667eea;
-    }
-
-    .btn {
-        padding: 10px 20px;
-        border-radius: 6px;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-block;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-        border: none;
-    }
-
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .btn-primary {
-        background-color: #667eea;
-        color: white;
-    }
-
-    .btn-success {
-        background-color: #28a745;
-        color: white;
-    }
-
-    .btn-info {
-        background-color: #17a2b8;
-        color: white;
-    }
-
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
-
-    .btn-sm {
-        padding: 6px 12px;
-        font-size: 0.9rem;
-    }
-
-    .btn-block {
-        width: 100%;
-        display: block;
-        text-align: center;
-    }
-
-    .alert {
-        padding: 12px 15px;
-        border-radius: 6px;
-        margin-bottom: 15px;
-    }
-
-    .alert-success {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
-    }
-
-    .alert-warning {
-        background-color: #fff3cd;
-        border: 1px solid #ffeeba;
-        color: #856404;
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animate-fade-in {
-        animation: fadeIn 0.6s ease-out;
-    }
-
-    .animate-slide-up {
-        animation: slideUp 0.6s ease-out forwards;
-        opacity: 0;
-    }
-
-    .profile-card {
-        animation-delay: 0s;
-    }
-
-    .dashboard-card {
-        animation-delay: 0.1s;
-    }
-
-    .changes-card {
-        animation-delay: 0.2s;
-    }
-
-    .settings-card {
-        animation-delay: 0.3s;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .profile-title {
-            font-size: 2rem;
-        }
-
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .card-header {
-            flex-direction: column;
-            gap: 15px;
-            text-align: center;
-        }
-
-        .card-header h2 {
-            width: 100%;
-        }
-    }
-</style>
 {% endblock %}

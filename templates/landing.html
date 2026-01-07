@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Management - Dar Al Riyadh | Building Assessment & Compliance{% endblock %}
+
+{% block content %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #2c5f8d 0%, #1e4462 100%);
+        color: white;
+        padding: 100px 20px;
+        text-align: center;
+    }
+    
+    .hero-logo {
+        height: 80px;
+        width: auto;
+        margin-bottom: 30px;
+        filter: brightness(0) invert(1);
+    }
+    
+    .hero-section h1 {
+        font-size: 2.8em;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+    
+    .hero-section .hero-subtitle {
+        font-size: 1.5em;
+        margin-bottom: 10px;
+        opacity: 0.95;
+    }
+    
+    .hero-section p {
+        font-size: 1.2em;
+        margin-bottom: 40px;
+        opacity: 0.9;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .cta-buttons {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .cta-buttons a {
+        padding: 15px 45px;
+        font-size: 1.1em;
+        font-weight: bold;
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-login {
+        background: white;
+        color: #2c5f8d;
+    }
+    
+    .btn-login:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        color: #1e4462;
+    }
+    
+    .btn-register {
+        background: rgba(255,255,255,0.15);
+        color: white;
+        border: 2px solid white;
+    }
+    
+    .btn-register:hover {
+        background: white;
+        color: #2c5f8d;
+        transform: translateY(-3px);
+    }
+    
+    .features {
+        padding: 80px 20px;
+        background: #f8f9fa;
+    }
+    
+    .features h2 {
+        text-align: center;
+        font-size: 2.5em;
+        margin-bottom: 60px;
+        color: #1e4462;
+    }
+    
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .feature-card {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-top: 4px solid #2c5f8d;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+    
+    .feature-icon {
+        font-size: 3em;
+        margin-bottom: 20px;
+        color: #2c5f8d;
+    }
+    
+    .feature-card h3 {
+        font-size: 1.5em;
+        margin-bottom: 15px;
+        color: #1e4462;
+    }
+    
+    .feature-card p {
+        color: #666;
+        line-height: 1.6;
+    }
+    
+    .why-choose-section {
+        background: white;
+        padding: 80px 20px;
+    }
+    
+    .why-choose-section h2 {
+        text-align: center;
+        font-size: 2.5em;
+        margin-bottom: 60px;
+        color: #1e4462;
+    }
+    
+    .why-list {
+        max-width: 900px;
+        margin: 0 auto;
+        display: grid;
+        gap: 30px;
+    }
+    
+    .why-item {
+        display: flex;
+        gap: 20px;
+    }
+    
+    .why-number {
+        background: linear-gradient(135deg, #2c5f8d 0%, #1e4462 100%);
+        color: white;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5em;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .why-content h4 {
+        font-size: 1.3em;
+        margin-bottom: 10px;
+        color: #1e4462;
+    }
+    
+    .why-content p {
+        color: #666;
+        line-height: 1.6;
+    }
+    
+    .footer-cta {
+        background: linear-gradient(135deg, #2c5f8d 0%, #1e4462 100%);
+        color: white;
+        padding: 60px 20px;
+        text-align: center;
+    }
+    
+    .footer-cta h2 {
+        font-size: 2em;
+        margin-bottom: 30px;
+    }
+    
+    .footer-cta a {
+        display: inline-block;
+        background: white;
+        color: #2c5f8d;
+        padding: 15px 40px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .footer-cta a:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        color: #1e4462;
+    }
+    
+    .stats-section {
+        background: #1e4462;
+        color: white;
+        padding: 60px 20px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 40px;
+        max-width: 1000px;
+        margin: 0 auto;
+        text-align: center;
+    }
+    
+    .stat-item h3 {
+        font-size: 3em;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .stat-item p {
+        font-size: 1.1em;
+        opacity: 0.9;
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <img src="{{ url_for('static', filename='images/dar-al-riyadh-logo.png') }}" alt="Dar Al Riyadh" class="hero-logo">
+    <h1>Asset Management System</h1>
+    <p class="hero-subtitle">Building Condition Assessment Report (BCAR)</p>
+    <p>Comprehensive building inspection, assessment, and compliance management platform for professional facility management</p>
+    <div class="cta-buttons">
+        <a href="{{ url_for('login') }}" class="btn-login">Login</a>
+        <a href="{{ url_for('register') }}" class="btn-register">Register</a>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="stats-section">
+    <div class="stats-grid">
+        <div class="stat-item">
+            <h3>21</h3>
+            <p>Building Systems</p>
+        </div>
+        <div class="stat-item">
+            <h3>146</h3>
+            <p>Subsystems</p>
+        </div>
+        <div class="stat-item">
+            <h3>151</h3>
+            <p>Components</p>
+        </div>
+        <div class="stat-item">
+            <h3>7</h3>
+            <p>Step Workflow</p>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="features">
+    <h2>Key Features</h2>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-building"></i></div>
+            <h3>Building Information</h3>
+            <p>Complete building profile with location, construction details, age analysis, effective age, and remaining life calculations.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-clipboard-check"></i></div>
+            <h3>Assessment Items</h3>
+            <p>Detailed inspection items across 21 systems with ratings, weights, risk scores, and automatic percentage calculations.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-tasks"></i></div>
+            <h3>Compliance Tracking</h3>
+            <p>Track government compliance requirements with Yes/No/Partial status, evidence references, and document uploads.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+            <h3>System Scoring</h3>
+            <p>Automated weighted scoring per system with visual progress indicators and overall building condition assessment.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-flask"></i></div>
+            <h3>Test Register</h3>
+            <p>Record all tests performed with acceptance criteria, results, test dates, and next scheduled test tracking.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-tools"></i></div>
+            <h3>CAPA Management</h3>
+            <p>Corrective and Preventive Actions with priority levels, due dates, responsibility assignment, and verification tracking.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Why Choose Section -->
+<div class="why-choose-section">
+    <h2>Why Choose BCAR?</h2>
+    <div class="why-list">
+        <div class="why-item">
+            <div class="why-number">1</div>
+            <div class="why-content">
+                <h4>Complete Assessment Framework</h4>
+                <p>Based on industry-standard BCAR template with all sections needed for professional building assessments including executive summary, detailed inspections, compliance, and corrective actions.</p>
+            </div>
+        </div>
+        
+        <div class="why-item">
+            <div class="why-number">2</div>
+            <div class="why-content">
+                <h4>Advanced Calculations</h4>
+                <p>Automatically calculates building scores, system weights, effective age, remaining life, compliance percentages, and FM performance metrics.</p>
+            </div>
+        </div>
+        
+        <div class="why-item">
+            <div class="why-number">3</div>
+            <div class="why-content">
+                <h4>Easy Data Entry</h4>
+                <p>Intuitive forms with dropdown selections for priorities, statuses, and other choice fields. Number inputs for scores and weights. Smart field validation.</p>
+            </div>
+        </div>
+        
+        <div class="why-item">
+            <div class="why-number">4</div>
+            <div class="why-content">
+                <h4>Searchable & Filterable</h4>
+                <p>Quickly find assessment items by system, priority, or keyword. Filter compliance by area. Track CAPA by status or priority.</p>
+            </div>
+        </div>
+        
+        <div class="why-item">
+            <div class="why-number">5</div>
+            <div class="why-content">
+                <h4>Enterprise Security</h4>
+                <p>All data is stored in a secure PostgreSQL database with password authentication. Session management, CSRF protection, and user approval workflow.</p>
+            </div>
+        </div>
+        
+        <div class="why-item">
+            <div class="why-number">6</div>
+            <div class="why-content">
+                <h4>Comprehensive Reports</h4>
+                <p>View executive summaries with KPIs, system breakdowns, compliance tracking, test results, and corrective action status all in one place.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer CTA -->
+<div class="footer-cta">
+    <h2>Ready to Get Started?</h2>
+    <p style="margin-bottom: 30px; font-size: 1.1em;">Create your account and import your first building assessment today</p>
+    <a href="{{ url_for('register') }}">Start Now</a>
+</div>
+
+{% endblock %}

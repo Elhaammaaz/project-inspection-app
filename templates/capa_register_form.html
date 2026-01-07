@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Add CAPA - {{ building.project_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('building_view', building_id=building.id) }}">{{ building.project_name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('capa_register', building_id=building.id) }}">CAPA Register</a></li>
+                    <li class="breadcrumb-item active">Add CAPA</li>
+                </ol>
+            </nav>
+            <h1><i class="fas fa-tasks"></i> Add CAPA Record</h1>
+            <p class="text-muted">Step 6: Corrective and Preventive Action for {{ building.project_name }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> CAPA Details</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('capa_register_new', building_id=building.id) }}" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <h6 class="text-muted mb-3">CAPA Identification</h6>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.capa_id.label(class="form-label") }}
+                        {{ form.capa_id(class="form-control", value=suggested_id) }}
+                        <small class="text-muted">Auto-generated ID</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.priority.label(class="form-label") }}
+                        {{ form.priority(class="form-select") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.system.label(class="form-label") }}
+                        {{ form.system(class="form-select") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.status.label(class="form-label") }}
+                        {{ form.status(class="form-select") }}
+                    </div>
+                </div>
+                
+                <hr>
+                <h6 class="text-muted mb-3">Finding & Action</h6>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.finding.label(class="form-label") }}
+                        {{ form.finding(class="form-control", rows="3", placeholder="Describe the finding/issue...") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.required_action.label(class="form-label") }}
+                        {{ form.required_action(class="form-control", rows="3", placeholder="Required corrective/preventive action...") }}
+                    </div>
+                </div>
+                
+                <hr>
+                <h6 class="text-muted mb-3">Ownership & Timeline</h6>
+                
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.responsibility.label(class="form-label") }}
+                        {{ form.responsibility(class="form-select") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.due_date.label(class="form-label") }}
+                        {{ form.due_date(class="form-control") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.estimated_cost.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text">SAR</span>
+                            {{ form.estimated_cost(class="form-control", placeholder="0.00") }}
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.verification_date.label(class="form-label") }}
+                        {{ form.verification_date(class="form-control") }}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.verification_evidence.label(class="form-label") }}
+                        {{ form.verification_evidence(class="form-control", placeholder="Evidence reference for verification") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.remarks.label(class="form-label") }}
+                        {{ form.remarks(class="form-control", placeholder="Additional notes") }}
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a href="{{ url_for('capa_register', building_id=building.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    {{ form.submit(class="btn btn-danger") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

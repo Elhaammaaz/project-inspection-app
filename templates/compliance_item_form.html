@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Compliance Item - {{ building.project_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('building_view', building_id=building.id) }}">{{ building.project_name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('compliance_checklist', building_id=building.id) }}">Compliance</a></li>
+                    <li class="breadcrumb-item active">Add Item</li>
+                </ol>
+            </nav>
+            <h1><i class="fas fa-plus-circle"></i> Add Compliance Item</h1>
+            <p class="text-muted">Step 3: Add a compliance requirement for {{ building.project_name }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-check-double"></i> Compliance Item Details</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('compliance_item_new', building_id=building.id) }}" enctype="multipart/form-data" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Compliance Area*</label>
+                        <select name="compliance_area_id" class="form-select" required>
+                            <option value="">-- Select Area --</option>
+                            {% for area in areas %}
+                            <option value="{{ area.id }}" {% if selected_area_id and selected_area_id == area.id %}selected{% endif %}>{{ area.area_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Status*</label>
+                        <select name="status" class="form-select" required>
+                            <option value="">-- Select Status --</option>
+                            <option value="Yes">✓ Yes - Compliant</option>
+                            <option value="No">✗ No - Non-Compliant</option>
+                            <option value="Partial">⚠ Partial</option>
+                            <option value="N/A">— N/A - Not Applicable</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Requirement Description*</label>
+                    <textarea name="requirement" class="form-control" rows="3" placeholder="Describe the compliance requirement..." required></textarea>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Evidence Reference</label>
+                        <input type="text" name="evidence_ref" class="form-control" placeholder="e.g., Certificate #12345, Permit No. ABC">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Remarks</label>
+                        <input type="text" name="remarks" class="form-control" placeholder="Additional notes...">
+                    </div>
+                </div>
+                
+                <!-- Document Upload Section -->
+                <div class="card bg-light mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-file-upload"></i> Upload Document</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Compliance Document</label>
+                                <input type="file" name="evidence_file" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls">
+                                <small class="text-muted">Accepted formats: PDF, Word, Excel, Images (Max 10MB)</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Document Type</label>
+                                <select name="document_type" class="form-select">
+                                    <option value="">-- Select Type --</option>
+                                    <option value="Certificate">Certificate</option>
+                                    <option value="Permit">Permit</option>
+                                    <option value="License">License</option>
+                                    <option value="Approval Letter">Approval Letter</option>
+                                    <option value="Inspection Report">Inspection Report</option>
+                                    <option value="Test Report">Test Report</option>
+                                    <option value="Photo Evidence">Photo Evidence</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a href="{{ url_for('compliance_checklist', building_id=building.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Compliance Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

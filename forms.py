@@ -1,175 +1,253 @@
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, FloatField, IntegerField, DateField, TextAreaField, SelectField, SubmitField
-from wtforms.validators import DataRequired, Email, Length, ValidationError, Optional, NumberRange
-from models import User
+"""
+WTForms for 7-step BCAR workflow
+Server-side validation for all data entry
+"""
 
+from flask_wtf import FlaskForm
+from wtforms import (
+    StringField, PasswordField, SubmitField, IntegerField, FloatField,
+    TextAreaField, SelectField, DateField, BooleanField, FileField
+)
+from wtforms.validators import (
+    DataRequired, Email, Length, EqualTo, NumberRange, Optional, ValidationError
+)
+from models import User, Building, System, Rate, Weight, Priority, Responsibility
+
+
+# ==================== AUTH FORMS ====================
 
 class LoginForm(FlaskForm):
-    """User login form"""
-    email = StringField('Email', validators=[
-        DataRequired(message='Email is required'),
-        Email(message='Invalid email address')
-    ])
-    password = PasswordField('Password', validators=[
-        DataRequired(message='Password is required'),
-        Length(min=6, message='Password must be at least 6 characters')
-    ])
-    submit = SubmitField('Sign In')
+    """User login"""
+    username = StringField('Username', validators=[DataRequired(), Length(min=3)])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
+
+
+class RegisterForm(FlaskForm):
+    """User registration"""
+    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=80)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    password_confirm = PasswordField('Confirm Password', 
+        validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Create Account')
+    
+    def validate_username(self, field):
+        if User.query.filter_by(username=field.data).first():
+            raise ValidationError('Username already taken')
     
     def validate_email(self, field):
-        """Check if email exists in database and is active"""
-        user = User.query.filter_by(email=field.data).first()
-        if not user:
-            raise ValidationError('Email or password is incorrect')
-        if not user.active:
-            raise ValidationError('Your account is pending approval. Please wait for admin confirmation.')
+        if User.query.filter_by(email=field.data).first():
+            raise ValidationError('Email already registered')
 
 
-class RegistrationForm(FlaskForm):
-    """User registration form"""
-    full_name = StringField('Full Name', validators=[
-        DataRequired(message='Full name is required'),
-        Length(min=2, max=255, message='Name must be between 2 and 255 characters')
-    ], render_kw={'placeholder': 'Your full name'})
+# ==================== STEP 1: BUILDING INFORMATION ====================
+
+# Building Type choices from Excel
+BUILDING_TYPE_CHOICES = [
+    ('', '-- Select Building Type --'),
+    ('LOAD-BEARING MASONRY', 'Load-Bearing Masonry'),
+    ('STEEL FRAME', 'Steel Frame'),
+    ('REINFORCED CONCRETE (RC)', 'Reinforced Concrete (RC)'),
+    ('TIMBER/ WOOD FRAME', 'Timber / Wood Frame'),
+    ('PRECAST/ PREFABRICATED', 'Precast / Prefabricated'),
+    ('COMPOSITE', 'Composite')
+]
+
+# Primary Use choices from Excel
+PRIMARY_USE_CHOICES = [
+    ('', '-- Select Primary Use --'),
+    ('RESIDENTIAL', 'Residential'),
+    ('COMMERCIAL', 'Commercial'),
+    ('INDUSTRIAL', 'Industrial'),
+    ('INSTITUTIONAL / PUBLIC', 'Institutional / Public'),
+    ('INFRASTRUCTURAL', 'Infrastructural'),
+    ('AGRICULTURAL', 'Agricultural'),
+    ('ADMIN', 'Administrative')
+]
+
+class BuildingHeaderForm(FlaskForm):
+    """Step 1: Building/Project information"""
     
-    email = StringField('Email Address', validators=[
-        DataRequired(message='Email is required'),
-        Email(message='Invalid email address'),
-        Length(min=5, max=120)
-    ], render_kw={'placeholder': 'your@email.com'})
+    project_name = StringField('Project / Building Name*', 
+        validators=[DataRequired(), Length(min=3, max=200)])
+    city = StringField('City*', 
+        validators=[DataRequired(), Length(max=100)])
+    address = StringField('Address*', 
+        validators=[DataRequired(), Length(max=255)])
+    latitude = FloatField('Latitude (GPS)', 
+        validators=[Optional(), NumberRange(min=-90, max=90)])
+    longitude = FloatField('Longitude (GPS)', 
+        validators=[Optional(), NumberRange(min=-180, max=180)])
+    building_type = SelectField('Building Type*', 
+        choices=BUILDING_TYPE_CHOICES, validators=[DataRequired()])
+    primary_use = SelectField('Primary Use*', 
+        choices=PRIMARY_USE_CHOICES, validators=[DataRequired()])
+    gross_built_area_m2 = FloatField('Gross Built Area (m²)*', 
+        validators=[DataRequired(), NumberRange(min=0)])
+    number_of_floors = IntegerField('Number of Floors*', 
+        validators=[DataRequired(), NumberRange(min=1)])
+    construction_year = IntegerField('Construction Year*', 
+        validators=[DataRequired(), NumberRange(min=1900, max=2099)])
+    last_major_renovation_date = DateField('Last Major Renovation Date', 
+        validators=[Optional()])
+    estimated_life_time_years = IntegerField('Estimated Life Time (Years)*', 
+        validators=[DataRequired(), NumberRange(min=1, max=200)])
+    planned_asset_retirement_year = IntegerField('Planned Asset Retirement Year', 
+        validators=[Optional(), NumberRange(min=2000, max=2200)])
+    fm_contractor = StringField('FM Contractor / Service Provider', 
+        validators=[Optional(), Length(max=200)])
+    inspection_date = DateField('Inspection Date*', 
+        validators=[DataRequired()])
+    current_year = IntegerField('Current Year*', 
+        validators=[DataRequired(), NumberRange(min=2020, max=2099)])
+    system_threshold_percent = FloatField('System Threshold (%)*', 
+        validators=[DataRequired(), NumberRange(min=0, max=100)])
     
-    password = PasswordField('Password', validators=[
-        DataRequired(message='Password is required'),
-        Length(min=6, message='Password must be at least 6 characters')
-    ], render_kw={'placeholder': 'At least 6 characters'})
-    
-    confirm_password = PasswordField('Confirm Password', validators=[
-        DataRequired(message='Please confirm your password')
-    ], render_kw={'placeholder': 'Repeat password'})
-    
-    submit = SubmitField('Request Account')
-    
-    def validate_email(self, field):
-        """Check if email already exists"""
-        user = User.query.filter_by(email=field.data).first()
-        if user:
-            raise ValidationError('Email already registered. Please login or use a different email.')
-    
-    def validate_confirm_password(self, field):
-        """Check if passwords match"""
-        if field.data != self.password.data:
-            raise ValidationError('Passwords do not match')
+    submit = SubmitField('Create Building & Continue')
 
 
-class ProjectInspectionForm(FlaskForm):
-    """Comprehensive Project Inspection form"""
+# ==================== STEP 2: ASSESSMENT ITEMS ====================
+
+class AssessmentItemForm(FlaskForm):
+    """Step 2: Individual assessment item (read-only calculated fields)"""
     
-    # Project Information Section
-    project_name = StringField('Project / Building Name', validators=[
-        DataRequired(message='Project name is required'),
-        Length(min=1, max=255)
-    ], render_kw={'placeholder': 'Enter project/building name'})
+    # Custom validator for non-zero selection
+    def validate_system(form, field):
+        if field.data is None or field.data == 0:
+            raise ValidationError('Please select a system')
     
-    city = StringField('City', validators=[Optional(), Length(max=255)], render_kw={'placeholder': 'Enter city name'})
-    address = StringField('Address', validators=[Optional(), Length(max=500)], render_kw={'placeholder': 'Enter full address'})
+    # These are for display/selection - not all editable
+    system = SelectField('System*', coerce=int, validators=[DataRequired(message="Please select a system")])
+    subsystem = SelectField('Subsystem*', coerce=int, validators=[Optional()], choices=[])
+    component = SelectField('Component*', coerce=int, validators=[Optional()], choices=[])
     
-    gps_latitude = FloatField('GPS Latitude', validators=[Optional(), NumberRange(min=-90, max=90)])
-    gps_longitude = FloatField('GPS Longitude', validators=[Optional(), NumberRange(min=-180, max=180)])
+    # Item reference (editable)
+    item_code = StringField('Item Code', validators=[Optional()])
+    inspection_item = TextAreaField('Inspection Item', validators=[Optional()])
+    criteria = TextAreaField('Criteria', validators=[Optional()])
+    test_method = TextAreaField('Test Method', validators=[Optional()])
     
-    # Building Details
-    building_type = StringField('Building Type', validators=[Optional(), Length(max=255)], render_kw={'placeholder': 'e.g., Residential, Commercial, Industrial'})
-    primary_use = StringField('Primary Use', validators=[Optional(), Length(max=255)], render_kw={'placeholder': 'e.g., Office, Warehouse, Shopping Center'})
-    gross_built_area = FloatField('Gross Built Area (m²)', validators=[Optional(), NumberRange(min=0)])
-    number_of_floors = IntegerField('Number of Floors', validators=[Optional(), NumberRange(min=0)])
+    # Asset & Location
+    asset_tag_no = StringField('Asset Tag No.', validators=[Optional(), Length(max=100)])
+    snag_location = StringField('Snag Location', validators=[Optional(), Length(max=255)])
+    snag_evidence_ref = StringField('Snag Evidence Ref.', validators=[Optional(), Length(max=100)])
+    snag_evidence_type = SelectField('Snag Evidence Type', 
+        choices=[('Photo', 'Photo'), ('Video', 'Video'), ('Report', 'Report'), ('IR Scan', 'IR Scan')],
+        validators=[Optional()])
     
-    # Dates
-    last_renovation_date = DateField('Last Major Renovation Date', validators=[Optional()], format='%Y-%m-%d')
-    construction_year = IntegerField('Construction Year', validators=[Optional(), NumberRange(min=1800, max=2100)])
-    current_year = IntegerField('Current Year', validators=[Optional(), NumberRange(min=1800, max=2100)])
-    estimated_life_time = IntegerField('Estimated Life Time (years)', validators=[Optional(), NumberRange(min=0)])
-    planned_retirement_year = IntegerField('Planned Asset Retirement Year', validators=[Optional(), NumberRange(min=1800, max=2100)])
-    inspection_date = DateField('Inspection Date', validators=[Optional()], format='%Y-%m-%d')
+    # Rating & Weight (USER EDITABLE)
+    rate = SelectField('Rate (1-5)*', coerce=int, validators=[DataRequired()])
+    item_weight = SelectField('Item Weight*', coerce=float, validators=[DataRequired()])
     
-    # Management
-    fm_contractor = StringField('FM Contractor / Service Provider', validators=[Optional(), Length(max=500)], render_kw={'placeholder': 'Enter contractor name'})
-    system_threshold = FloatField('System Threshold (%)', validators=[Optional(), NumberRange(min=0, max=100)])
+    # Risk & Actions
+    risk_criticality = SelectField('Risk Criticality (0-5)*', coerce=int, 
+        choices=[(i, str(i)) for i in range(6)], validators=[DataRequired()])
+    responsibility = SelectField('Responsibility', coerce=int, validators=[Optional()])
+    priority = SelectField('Priority*', validators=[DataRequired()], 
+        choices=[('P1', 'P1 - Critical'), ('P2', 'P2 - High'), ('P3', 'P3 - Medium'), ('P4', 'P4 - Low')])
+    status = SelectField('Status*', validators=[DataRequired()],
+        choices=[('Open', 'Open'), ('In Progress', 'In Progress'), ('Closed', 'Closed'), ('Verified', 'Verified')])
+    due_date = DateField('Due Date', validators=[Optional()])
+    remarks = TextAreaField('Remarks', validators=[Optional()])
     
-    # Assessment Results
-    inspection_result = SelectField('Inspection Result', choices=[
-        ('', '-- Select Result --'),
-        ('Passed', 'Passed'),
-        ('Passed but Need Attention', 'Passed but Need Attention'),
-        ('Not Complied', 'Not Complied'),
-        ('Pending', 'Pending')
-    ], validators=[Optional()])
+    # Calculated fields (READ-ONLY, populated server-side)
+    score = FloatField('Score (calculated)', render_kw={'readonly': True})
+    score_percent = FloatField('Score % (calculated)', render_kw={'readonly': True})
+    weighted_score = FloatField('Weighted Score (calculated)', render_kw={'readonly': True})
     
-    building_score = FloatField('Building Score', validators=[Optional(), NumberRange(min=0, max=100)])
-    high_priority_classified = IntegerField('High Priority Classified', validators=[Optional(), NumberRange(min=0)])
-    fm_performance = FloatField('FM Performance', validators=[Optional(), NumberRange(min=0, max=100)])
-    government_compliance = SelectField('Government Compliance', choices=[
-        ('', '-- Select Status --'),
-        ('Complied', 'Complied'),
-        ('Not Complied', 'Not Complied'),
-        ('Partial Compliance', 'Partial Compliance'),
-        ('Pending Review', 'Pending Review')
-    ], validators=[Optional()])
+    # Evidence
+    evidence_file = FileField('Upload Evidence', validators=[Optional()])
     
-    # Fire & Safety & Other Metrics
-    fire_life_safety = FloatField('Fire & Life Safety (%)', validators=[Optional(), NumberRange(min=0, max=100)])
-    total_economic_life = IntegerField('Total Economic Life (years)', validators=[Optional(), NumberRange(min=0)])
-    chronological_age = IntegerField('Chronological (Actual) Age (years)', validators=[Optional(), NumberRange(min=0)])
-    estimated_effective_age = IntegerField('Estimated Effective Age (years)', validators=[Optional(), NumberRange(min=0)])
-    estimated_remaining_life = IntegerField('Estimated Remaining Life (years)', validators=[Optional(), NumberRange(min=0)])
-    
-    # Additional Metadata
-    inspection_status = SelectField('Inspection Status', choices=[
-        ('draft', 'Draft'),
-        ('completed', 'Completed'),
-        ('reviewed', 'Reviewed')
-    ], default='draft')
-    
-    inspection_by = StringField('Inspector Name', validators=[Optional(), Length(max=255)])
-    reviewed_by = StringField('Reviewer Name', validators=[Optional(), Length(max=255)])
-    
-    # Notes
-    notes = TextAreaField('Notes', validators=[Optional(), Length(max=5000)], render_kw={
-        'rows': 5,
-        'placeholder': 'Add any additional observations, recommendations, or notes from the inspection'
-    })
-    
-    submit = SubmitField('Save Project Inspection')
+    submit = SubmitField('Save Item')
+    submit_next = SubmitField('Save & Next: Compliance Checklist')
 
 
-class InspectionSystemForm(FlaskForm):
-    """Form for adding/editing individual building system"""
+# ==================== STEP 3: COMPLIANCE CHECKLIST ====================
+
+class ComplianceItemForm(FlaskForm):
+    """Step 3: Individual compliance item"""
     
-    system_name = StringField('System Name', validators=[
-        DataRequired(message='System name is required'),
-        Length(min=1, max=255)
-    ], render_kw={'placeholder': 'e.g., Electrical, HVAC, Plumbing'})
+    item_code = StringField('Item Code', render_kw={'readonly': True})
+    compliance_area = StringField('Compliance Area', render_kw={'readonly': True})
+    requirement = TextAreaField('Requirement', render_kw={'readonly': True})
+    evidence_required = BooleanField('Evidence Required', render_kw={'readonly': True})
     
-    system_type = StringField('System Type', validators=[
-        Optional(),
-        Length(max=255)
-    ], render_kw={'placeholder': 'e.g., Distribution Panel, Cooling Unit'})
+    # User input
+    status = SelectField('Status*', validators=[DataRequired()],
+        choices=[('Yes', 'Yes'), ('No', 'No'), ('Partial', 'Partial'), ('N/A', 'N/A')])
+    evidence_ref = StringField('Evidence Ref.', validators=[Optional(), Length(max=100)])
+    evidence_file = FileField('Upload Evidence', validators=[Optional()])
+    remarks = TextAreaField('Remarks', validators=[Optional()])
     
-    condition_rating = SelectField('Condition Rating', choices=[
-        ('', '-- Select Rating --'),
-        ('Excellent', 'Excellent'),
-        ('Good', 'Good'),
-        ('Fair', 'Fair'),
-        ('Poor', 'Poor'),
-        ('Critical', 'Critical')
-    ], validators=[Optional()])
+    submit = SubmitField('Save Compliance Item')
+
+
+# ==================== STEP 4: SYSTEM SCORING ====================
+
+class SystemScoringForm(FlaskForm):
+    """Step 4: System weight adjustment (weight is USER EDITABLE only)"""
     
-    last_maintenance = DateField('Last Maintenance Date', validators=[Optional()], format='%Y-%m-%d')
+    system = StringField('System', render_kw={'readonly': True})
+    item_count = IntegerField('Item Count', render_kw={'readonly': True})
+    score_percent = FloatField('Score %', render_kw={'readonly': True})
+    weight = FloatField('Weight* (must sum to 100)', validators=[DataRequired(), NumberRange(min=0, max=100)])
+    weighted_score = FloatField('Weighted Score', render_kw={'readonly': True})
     
-    maintenance_notes = TextAreaField('Maintenance Notes', validators=[
-        Optional(),
-        Length(max=500)
-    ], render_kw={'rows': 3, 'placeholder': 'Any relevant maintenance notes'})
+    submit = SubmitField('Update Weight')
+    submit_all = SubmitField('Save All Weights & Continue')
+
+
+# ==================== STEP 5: TEST REGISTER ====================
+
+class TestRegisterForm(FlaskForm):
+    """Step 5: Test record"""
     
-    next_maintenance = DateField('Next Maintenance Date', validators=[Optional()], format='%Y-%m-%d')
+    system = SelectField('System*', coerce=int, validators=[DataRequired()])
+    test_id = StringField('Test ID*', validators=[DataRequired(), Length(max=50)])
+    test_name = StringField('Test Name*', validators=[DataRequired(), Length(max=200)])
+    standard_reference = StringField('Standard / Reference', validators=[Optional(), Length(max=100)])
+    instrument = StringField('Instrument', validators=[Optional(), Length(max=150)])
+    locations_sampling = TextAreaField('Locations / Sampling', validators=[Optional()])
+    acceptance_criteria = TextAreaField('Acceptance Criteria', validators=[Optional()])
     
-    submit = SubmitField('Save System')
+    # Test results
+    readings = TextAreaField('Readings (JSON or notes)', validators=[Optional()])
+    result = SelectField('Result*', validators=[DataRequired()],
+        choices=[('Pass', 'Pass'), ('Fail', 'Fail'), ('Need Attention', 'Need Attention')])
+    test_date = DateField('Test Date*', validators=[DataRequired()])
+    witness = StringField('Witness', validators=[Optional(), Length(max=100)])
+    evidence_ref = StringField('Evidence Ref.', validators=[Optional(), Length(max=100)])
+    evidence_file = FileField('Upload Evidence', validators=[Optional()])
+    remarks = TextAreaField('Remarks', validators=[Optional()])
+    
+    submit = SubmitField('Save Test Record')
+    submit_next = SubmitField('Save & Next: CAPA Register')
+
+
+# ==================== STEP 6: CAPA REGISTER ====================
+
+class CAPARegisterForm(FlaskForm):
+    """Step 6: CAPA record"""
+    
+    capa_id = StringField('CAPA ID*', validators=[DataRequired(), Length(max=50)])
+    system = SelectField('System*', coerce=int, validators=[DataRequired()])
+    priority = SelectField('Priority*', validators=[DataRequired()],
+        choices=[('P1', 'P1 - Critical'), ('P2', 'P2 - High'), ('P3', 'P3 - Medium'), ('P4', 'P4 - Low')])
+    
+    finding = TextAreaField('Finding*', validators=[DataRequired()])
+    required_action = TextAreaField('Required Action*', validators=[DataRequired()])
+    responsibility = SelectField('Responsibility', coerce=int, validators=[Optional()])
+    due_date = DateField('Due Date*', validators=[DataRequired()])
+    estimated_cost = FloatField('Estimated Cost', validators=[Optional()])
+    
+    status = SelectField('Status*', validators=[DataRequired()],
+        choices=[('Open', 'Open'), ('In Progress', 'In Progress'), ('Closed', 'Closed'), 
+                 ('Verified', 'Verified'), ('Overdue', 'Overdue')])
+    verification_evidence = StringField('Verification Evidence', validators=[Optional(), Length(max=500)])
+    verification_date = DateField('Verification Date', validators=[Optional()])
+    remarks = TextAreaField('Remarks', validators=[Optional()])
+    
+    submit = SubmitField('Save CAPA Record')
+    submit_next = SubmitField('Save & View Dashboard')
 

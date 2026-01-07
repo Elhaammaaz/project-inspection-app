@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Test - {{ building.project_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('building_view', building_id=building.id) }}">{{ building.project_name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('test_register', building_id=building.id) }}">Test Register</a></li>
+                    <li class="breadcrumb-item active">Add Test</li>
+                </ol>
+            </nav>
+            <h1><i class="fas fa-flask"></i> Add Test Record</h1>
+            <p class="text-muted">Step 5: Record a test for {{ building.project_name }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="fas fa-vial"></i> Test Details</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('test_register_new', building_id=building.id) }}" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <h6 class="text-muted mb-3">Test Identification</h6>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.test_id.label(class="form-label") }}
+                        {{ form.test_id(class="form-control", placeholder="e.g., TR-001") }}
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        {{ form.test_name.label(class="form-label") }}
+                        {{ form.test_name(class="form-control", placeholder="Test name") }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.system.label(class="form-label") }}
+                        {{ form.system(class="form-select") }}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form.standard_reference.label(class="form-label") }}
+                        {{ form.standard_reference(class="form-control", placeholder="e.g., NFPA 20") }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.instrument.label(class="form-label") }}
+                        {{ form.instrument(class="form-control", placeholder="Test instrument") }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.locations_sampling.label(class="form-label") }}
+                        {{ form.locations_sampling(class="form-control", placeholder="Sample locations") }}
+                    </div>
+                </div>
+                
+                <hr>
+                <h6 class="text-muted mb-3">Test Criteria & Results</h6>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.acceptance_criteria.label(class="form-label") }}
+                        {{ form.acceptance_criteria(class="form-control", rows="2", placeholder="Acceptance criteria") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.readings.label(class="form-label") }}
+                        {{ form.readings(class="form-control", rows="2", placeholder="Test readings/measurements") }}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.result.label(class="form-label") }}
+                        {{ form.result(class="form-select") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.test_date.label(class="form-label") }}
+                        {{ form.test_date(class="form-control") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.witness.label(class="form-label") }}
+                        {{ form.witness(class="form-control", placeholder="Witness name") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.evidence_ref.label(class="form-label") }}
+                        {{ form.evidence_ref(class="form-control", placeholder="Evidence ref") }}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.remarks.label(class="form-label") }}
+                    {{ form.remarks(class="form-control", rows="2", placeholder="Additional notes") }}
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a href="{{ url_for('test_register', building_id=building.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    {{ form.submit(class="btn btn-warning") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

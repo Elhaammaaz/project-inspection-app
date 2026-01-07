@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block title %}CAPA Register - {{ building.project_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('building_view', building_id=building.id) }}">{{ building.project_name }}</a></li>
+                    <li class="breadcrumb-item active">CAPA Register</li>
+                </ol>
+            </nav>
+            <h1><i class="fas fa-tasks"></i> CAPA Register</h1>
+            <p class="text-muted">Step 6 of 7: Corrective & Preventive Actions for {{ building.project_name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('capa_register_new', building_id=building.id) }}" class="btn btn-danger">
+                <i class="fas fa-plus"></i> Add CAPA
+            </a>
+        </div>
+    </div>
+
+    <!-- Progress Indicator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress" style="height: 25px;">
+                <div class="progress-bar bg-danger" role="progressbar" style="width: 85%;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100">
+                    Step 6 of 7
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if capas.items %}
+    <div class="card mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>CAPA ID</th>
+                        <th>Finding</th>
+                        <th>Required Action</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Due Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for capa in capas.items %}
+                    <tr>
+                        <td><strong>{{ capa.capa_id }}</strong></td>
+                        <td>{{ capa.finding[:50] if capa.finding else '-' }}{% if capa.finding and capa.finding|length > 50 %}...{% endif %}</td>
+                        <td>{{ capa.required_action[:50] if capa.required_action else '-' }}{% if capa.required_action and capa.required_action|length > 50 %}...{% endif %}</td>
+                        <td>
+                            <span class="badge bg-{% if capa.priority == 'P1' %}danger{% elif capa.priority == 'P2' %}warning{% else %}secondary{% endif %}">
+                                {{ capa.priority }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if capa.status == 'Closed' %}success{% elif capa.status == 'In Progress' %}warning{% elif capa.status == 'Verified' %}info{% else %}danger{% endif %}">
+                                {{ capa.status }}
+                            </span>
+                        </td>
+                        <td>{{ capa.due_date.strftime('%Y-%m-%d') if capa.due_date else '-' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" disabled>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if capas.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if capas.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('capa_register', building_id=building.id, page=capas.prev_num) }}">Previous</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for page_num in capas.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num == capas.page %}
+                        <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('capa_register', building_id=building.id, page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if capas.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('capa_register', building_id=building.id, page=capas.next_num) }}">Next</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="card mb-4">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+            <h5 class="card-title">No CAPA Items Yet</h5>
+            <p class="card-text text-muted">Create Corrective and Preventive Actions based on assessment findings.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- CAPA Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-secondary">
+                <div class="card-body">
+                    <h3 class="display-6">{{ capas.total if capas.total else 0 }}</h3>
+                    <p class="text-muted mb-0">Total CAPAs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-danger">
+                <div class="card-body">
+                    <h3 class="display-6 text-danger">0</h3>
+                    <p class="text-muted mb-0">Open</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <h3 class="display-6 text-warning">0</h3>
+                    <p class="text-muted mb-0">In Progress</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <h3 class="display-6 text-success">0</h3>
+                    <p class="text-muted mb-0">Closed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="d-grid gap-2 d-md-flex justify-content-md-between mt-4">
+        <a href="{{ url_for('test_register', building_id=building.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back: Step 5 - Test Register
+        </a>
+        <a href="{{ url_for('executive_dashboard', building_id=building.id) }}" class="btn btn-success btn-lg">
+            <i class="fas fa-chart-pie"></i> Final: Step 7 - Executive Dashboard <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}

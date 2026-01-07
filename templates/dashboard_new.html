@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - BCAR Inspection System{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-success" role="alert">
+                <h4 class="alert-heading">Welcome, {{ current_user.email }}!</h4>
+                <p>You have successfully logged in to the BCAR Inspection System.</p>
+                <hr>
+                <p class="mb-0">Ready to start? Choose an option below to begin.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="row">
+        <!-- Projects Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-folder"></i> Projects
+                    </h5>
+                    <p class="card-text">Manage and organize your inspection projects.</p>
+                    <div class="btn-group w-100" role="group">
+                        <a href="/projects" class="btn btn-outline-primary">View Projects</a>
+                        <a href="/projects/new" class="btn btn-outline-primary">New Project</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inspections Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-clipboard-list"></i> Inspections
+                    </h5>
+                    <p class="card-text">Create and manage inspection forms and assessments.</p>
+                    <div class="btn-group w-100" role="group">
+                        <a href="/inspections" class="btn btn-outline-primary">View Inspections</a>
+                        <a href="/inspections/new" class="btn btn-outline-primary">New Inspection</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Systems Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-cogs"></i> Systems
+                    </h5>
+                    <p class="card-text">Configure inspection systems and weighted criteria.</p>
+                    <div class="btn-group w-100" role="group">
+                        <a href="/systems" class="btn btn-outline-primary">View Systems</a>
+                        <a href="/systems/new" class="btn btn-outline-primary">New System</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Reports
+                    </h5>
+                    <p class="card-text">Generate and view compliance reports and analytics.</p>
+                    <div class="btn-group w-100" role="group">
+                        <a href="/reports" class="btn btn-outline-primary">View Reports</a>
+                        <a href="/reports/new" class="btn btn-outline-primary">New Report</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Section -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h5>Quick Statistics</h5>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Active Projects</h6>
+                    <h3>0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Inspections</h6>
+                    <h3>0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Compliance Rate</h6>
+                    <h3>--</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Open Items</h6>
+                    <h3>0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Getting Started Section -->
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">Getting Started</h5>
+                    <ol class="mb-0">
+                        <li>Create a new <strong>Project</strong> to organize your inspections</li>
+                        <li>Add an <strong>Inspection Form</strong> with assessment criteria</li>
+                        <li>Define your <strong>Systems</strong> and compliance items</li>
+                        <li>Conduct inspections and track compliance</li>
+                        <li>Generate <strong>Reports</strong> for management review</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-md-12 text-center">
+            <a href="/profile" class="btn btn-secondary me-2">
+                <i class="fas fa-user"></i> My Profile
+            </a>
+            <a href="/logout" class="btn btn-danger">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: 1px solid #dee2e6;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 5px;
+    }
+
+    .btn-group a {
+        flex: 1;
+        font-size: 0.9rem;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border: 1px solid #b1dfbb;
+        color: #155724;
+    }
+</style>
+{% endblock %}

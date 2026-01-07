@@ -88,6 +88,7 @@
                                     </td>
                                     <td>
                                         <form method="POST" action="{{ url_for('update_user_access', user_id=user.id) }}" class="inline-form" onsubmit="return updateAccess(event, this)">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <select name="can_view_dashboard" class="status-dropdown">
                                                 <option value="0" {% if user.can_view_dashboard == 0 %}selected{% endif %}>❌ Denied</option>
                                                 <option value="1" {% if user.can_view_dashboard == 1 %}selected{% endif %}>✓ Approved</option>
@@ -100,6 +101,7 @@
                                     </td>
                                     <td>
                                         <form method="POST" action="{{ url_for('update_user_access', user_id=user.id) }}" class="inline-form" onsubmit="return updateAccess(event, this)">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <select name="can_view_reports" class="status-dropdown">
                                                 <option value="0" {% if user.can_view_reports == 0 %}selected{% endif %}>❌ Denied</option>
                                                 <option value="1" {% if user.can_view_reports == 1 %}selected{% endif %}>✓ Approved</option>
@@ -112,6 +114,7 @@
                                     </td>
                                     <td>
                                         <form method="POST" action="{{ url_for('update_user_access', user_id=user.id) }}" class="inline-form" onsubmit="return updateAccess(event, this)">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <select name="can_export_data" class="status-dropdown">
                                                 <option value="0" {% if user.can_export_data == 0 %}selected{% endif %}>❌ Denied</option>
                                                 <option value="1" {% if user.can_export_data == 1 %}selected{% endif %}>✓ Approved</option>
@@ -124,6 +127,7 @@
                                     </td>
                                     <td>
                                         <form method="POST" action="{{ url_for('update_user_access', user_id=user.id) }}" class="inline-form" onsubmit="return updateAccess(event, this)">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <select name="can_manage_users" class="status-dropdown">
                                                 <option value="0" {% if user.can_manage_users == 0 %}selected{% endif %}>❌ Denied</option>
                                                 <option value="1" {% if user.can_manage_users == 1 %}selected{% endif %}>✓ Approved</option>

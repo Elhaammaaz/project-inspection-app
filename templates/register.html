@@ -7,26 +7,31 @@
     <div class="col-12 col-sm-10 col-md-8 col-lg-5">
         <div class="card">
             <div class="card-body p-4 p-md-5">
-                <h2 class="card-title text-center mb-2">
-                    <i class="fas fa-user-plus" style="color: #2c5f8d;"></i> Create Account
-                </h2>
-                <p class="text-center text-muted mb-4">Join Asset Management System (requires admin approval)</p>
+                <div class="text-center mb-4">
+                    <img src="{{ url_for('static', filename='images/DarAlriyadhBlue.png') }}" alt="Dar Al Riyadh" style="height: 50px; width: auto; margin-bottom: 15px;">
+                    <h2 class="card-title mb-2">Create Account</h2>
+                    <p class="text-muted">Join Asset Management System</p>
+                </div>
+                
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle"></i> <strong>Note:</strong> Your account will require admin approval before you can log in.
+                </div>
                 
                 <form method="POST" action="{{ url_for('register') }}" novalidate>
                     {{ form.hidden_tag() }}
                     
-                    <!-- Full Name Field -->
+                    <!-- Username Field -->
                     <div class="mb-3">
-                        {{ form.full_name.label(class="form-label") }}
-                        {% if form.full_name.errors %}
-                            {{ form.full_name(class="form-control is-invalid") }}
+                        {{ form.username.label(class="form-label") }}
+                        {% if form.username.errors %}
+                            {{ form.username(class="form-control is-invalid") }}
                             <div class="invalid-feedback d-block">
-                                {% for error in form.full_name.errors %}
+                                {% for error in form.username.errors %}
                                     <small>{{ error }}</small><br>
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.full_name(class="form-control") }}
+                            {{ form.username(class="form-control") }}
                         {% endif %}
                     </div>
                     
@@ -63,16 +68,16 @@
                     
                     <!-- Confirm Password Field -->
                     <div class="mb-3">
-                        {{ form.confirm_password.label(class="form-label") }}
-                        {% if form.confirm_password.errors %}
-                            {{ form.confirm_password(class="form-control is-invalid") }}
+                        {{ form.password_confirm.label(class="form-label") }}
+                        {% if form.password_confirm.errors %}
+                            {{ form.password_confirm(class="form-control is-invalid") }}
                             <div class="invalid-feedback d-block">
-                                {% for error in form.confirm_password.errors %}
+                                {% for error in form.password_confirm.errors %}
                                     <small>{{ error }}</small><br>
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.confirm_password(class="form-control") }}
+                            {{ form.password_confirm(class="form-control") }}
                         {% endif %}
                     </div>
                     

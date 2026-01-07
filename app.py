@@ -795,6 +795,340 @@ def create_app(config_name='development'):
         systems = System.query.filter_by(active=True).order_by(System.order).all()
         return jsonify([{'id': s.id, 'code': s.system_code, 'name': s.system_name} for s in systems])
     
+    # ==================== POWER BI API ENDPOINTS ====================
+    
+    @app.route('/api/powerbi/users')
+    def api_powerbi_users():
+        """Power BI: Get all users"""
+        users = User.query.all()
+        return jsonify({'data': [{
+            'id': u.id,
+            'username': u.username,
+            'email': u.email,
+            'role': u.role,
+            'is_active': u.is_active,
+            'created_at': u.created_at.isoformat() if u.created_at else None,
+            'updated_at': u.updated_at.isoformat() if u.updated_at else None
+        } for u in users]})
+    
+    @app.route('/api/powerbi/systems')
+    def api_powerbi_systems():
+        """Power BI: Get all systems"""
+        systems = System.query.all()
+        return jsonify({'data': [{
+            'id': s.id,
+            'system_code': s.system_code,
+            'system_name': s.system_name,
+            'description': s.description,
+            'order': s.order,
+            'active': s.active,
+            'created_at': s.created_at.isoformat() if s.created_at else None
+        } for s in systems]})
+    
+    @app.route('/api/powerbi/subsystems')
+    def api_powerbi_subsystems():
+        """Power BI: Get all subsystems"""
+        subsystems = Subsystem.query.all()
+        return jsonify({'data': [{
+            'id': s.id,
+            'system_id': s.system_id,
+            'subsystem_code': s.subsystem_code,
+            'subsystem_name': s.subsystem_name,
+            'description': s.description,
+            'order': s.order,
+            'active': s.active
+        } for s in subsystems]})
+    
+    @app.route('/api/powerbi/components')
+    def api_powerbi_components():
+        """Power BI: Get all components"""
+        components = Component.query.all()
+        return jsonify({'data': [{
+            'id': c.id,
+            'subsystem_id': c.subsystem_id,
+            'component_code': c.component_code,
+            'component_name': c.component_name,
+            'description': c.description,
+            'order': c.order,
+            'active': c.active
+        } for c in components]})
+    
+    @app.route('/api/powerbi/buildings')
+    def api_powerbi_buildings():
+        """Power BI: Get all buildings"""
+        buildings = Building.query.all()
+        return jsonify({'data': [{
+            'id': b.id,
+            'project_name': b.project_name,
+            'building_code': b.building_code,
+            'city': b.city,
+            'address': b.address,
+            'latitude': b.latitude,
+            'longitude': b.longitude,
+            'building_type': b.building_type,
+            'primary_use': b.primary_use,
+            'gross_built_area_m2': b.gross_built_area_m2,
+            'number_of_floors': b.number_of_floors,
+            'construction_year': b.construction_year,
+            'last_major_renovation_date': b.last_major_renovation_date.isoformat() if b.last_major_renovation_date else None,
+            'estimated_life_time_years': b.estimated_life_time_years,
+            'planned_asset_retirement_year': b.planned_asset_retirement_year,
+            'fm_contractor': b.fm_contractor,
+            'inspection_date': b.inspection_date.isoformat() if b.inspection_date else None,
+            'current_year': b.current_year,
+            'system_threshold_percent': b.system_threshold_percent,
+            'created_by_id': b.created_by_id,
+            'status': b.status,
+            'created_at': b.created_at.isoformat() if b.created_at else None,
+            'updated_at': b.updated_at.isoformat() if b.updated_at else None
+        } for b in buildings]})
+    
+    @app.route('/api/powerbi/assessments')
+    def api_powerbi_assessments():
+        """Power BI: Get all assessments"""
+        assessments = Assessment.query.all()
+        return jsonify({'data': [{
+            'id': a.id,
+            'building_id': a.building_id,
+            'assessment_code': a.assessment_code,
+            'status': a.status,
+            'notes': a.notes,
+            'created_at': a.created_at.isoformat() if a.created_at else None,
+            'updated_at': a.updated_at.isoformat() if a.updated_at else None
+        } for a in assessments]})
+    
+    @app.route('/api/powerbi/assessment_items')
+    def api_powerbi_assessment_items():
+        """Power BI: Get all assessment items"""
+        items = AssessmentItem.query.all()
+        return jsonify({'data': [{
+            'id': i.id,
+            'assessment_id': i.assessment_id,
+            'system_id': i.system_id,
+            'subsystem_id': i.subsystem_id,
+            'component_id': i.component_id,
+            'item_code': i.item_code,
+            'inspection_item': i.inspection_item,
+            'criteria': i.criteria,
+            'test_method': i.test_method,
+            'asset_tag_no': i.asset_tag_no,
+            'snag_location': i.snag_location,
+            'snag_evidence_ref': i.snag_evidence_ref,
+            'snag_evidence_type': i.snag_evidence_type,
+            'rate': i.rate,
+            'item_weight': i.item_weight,
+            'risk_criticality': i.risk_criticality,
+            'responsibility_id': i.responsibility_id,
+            'priority': i.priority,
+            'status': i.status,
+            'due_date': i.due_date.isoformat() if i.due_date else None,
+            'remarks': i.remarks,
+            'score': i.score,
+            'score_percent': i.score_percent,
+            'weighted_score': i.weighted_score,
+            'created_at': i.created_at.isoformat() if i.created_at else None,
+            'updated_at': i.updated_at.isoformat() if i.updated_at else None
+        } for i in items]})
+    
+    @app.route('/api/powerbi/compliance_checklists')
+    def api_powerbi_compliance_checklists():
+        """Power BI: Get all compliance checklists"""
+        checklists = ComplianceChecklist.query.all()
+        return jsonify({'data': [{
+            'id': c.id,
+            'building_id': c.building_id,
+            'checklist_code': c.checklist_code,
+            'status': c.status,
+            'created_at': c.created_at.isoformat() if c.created_at else None,
+            'updated_at': c.updated_at.isoformat() if c.updated_at else None
+        } for c in checklists]})
+    
+    @app.route('/api/powerbi/compliance_items')
+    def api_powerbi_compliance_items():
+        """Power BI: Get all compliance items"""
+        items = ComplianceItem.query.all()
+        return jsonify({'data': [{
+            'id': i.id,
+            'checklist_id': i.checklist_id,
+            'compliance_area_id': i.compliance_area_id,
+            'item_code': i.item_code,
+            'requirement': i.requirement,
+            'evidence_required': i.evidence_required,
+            'status': i.status,
+            'evidence_ref': i.evidence_ref,
+            'remarks': i.remarks,
+            'evidence_file_path': i.evidence_file_path,
+            'created_at': i.created_at.isoformat() if i.created_at else None,
+            'updated_at': i.updated_at.isoformat() if i.updated_at else None
+        } for i in items]})
+    
+    @app.route('/api/powerbi/compliance_areas')
+    def api_powerbi_compliance_areas():
+        """Power BI: Get all compliance areas"""
+        areas = ComplianceArea.query.all()
+        return jsonify({'data': [{
+            'id': a.id,
+            'area_name': a.area_name,
+            'description': a.description,
+            'regulation_code': a.regulation_code,
+            'active': a.active
+        } for a in areas]})
+    
+    @app.route('/api/powerbi/system_scores')
+    def api_powerbi_system_scores():
+        """Power BI: Get all system scores"""
+        scores = SystemScore.query.all()
+        return jsonify({'data': [{
+            'id': s.id,
+            'building_id': s.building_id,
+            'system_id': s.system_id,
+            'item_count': s.item_count,
+            'score_percent': s.score_percent,
+            'weight': s.weight,
+            'weighted_score': s.weighted_score,
+            'created_at': s.created_at.isoformat() if s.created_at else None,
+            'updated_at': s.updated_at.isoformat() if s.updated_at else None
+        } for s in scores]})
+    
+    @app.route('/api/powerbi/test_registers')
+    def api_powerbi_test_registers():
+        """Power BI: Get all test registers"""
+        tests = TestRegister.query.all()
+        return jsonify({'data': [{
+            'id': t.id,
+            'building_id': t.building_id,
+            'system_id': t.system_id,
+            'test_id': t.test_id,
+            'test_name': t.test_name,
+            'standard_reference': t.standard_reference,
+            'instrument': t.instrument,
+            'locations_sampling': t.locations_sampling,
+            'acceptance_criteria': t.acceptance_criteria,
+            'readings': t.readings,
+            'result': t.result,
+            'witness': t.witness,
+            'test_date': t.test_date.isoformat() if t.test_date else None,
+            'evidence_ref': t.evidence_ref,
+            'remarks': t.remarks,
+            'created_at': t.created_at.isoformat() if t.created_at else None,
+            'updated_at': t.updated_at.isoformat() if t.updated_at else None
+        } for t in tests]})
+    
+    @app.route('/api/powerbi/capa_registers')
+    def api_powerbi_capa_registers():
+        """Power BI: Get all CAPA registers"""
+        capas = CAPARegister.query.all()
+        return jsonify({'data': [{
+            'id': c.id,
+            'building_id': c.building_id,
+            'system_id': c.system_id,
+            'assessment_item_id': c.assessment_item_id,
+            'capa_id': c.capa_id,
+            'priority': c.priority,
+            'finding': c.finding,
+            'required_action': c.required_action,
+            'responsibility_id': c.responsibility_id,
+            'due_date': c.due_date.isoformat() if c.due_date else None,
+            'estimated_cost': c.estimated_cost,
+            'status': c.status,
+            'verification_evidence': c.verification_evidence,
+            'verification_date': c.verification_date.isoformat() if c.verification_date else None,
+            'remarks': c.remarks,
+            'is_overdue': c.is_overdue(),
+            'created_at': c.created_at.isoformat() if c.created_at else None,
+            'updated_at': c.updated_at.isoformat() if c.updated_at else None
+        } for c in capas]})
+    
+    @app.route('/api/powerbi/executive_dashboard')
+    def api_powerbi_executive_dashboard():
+        """Power BI: Get all executive dashboard summaries"""
+        dashboards = ExecutiveDashboardSummary.query.all()
+        return jsonify({'data': [{
+            'id': d.id,
+            'building_id': d.building_id,
+            'overall_building_score': d.overall_building_score,
+            'overall_compliance_percent': d.overall_compliance_percent,
+            'threshold_pass': d.threshold_pass,
+            'total_assessment_items': d.total_assessment_items,
+            'items_open': d.items_open,
+            'items_in_progress': d.items_in_progress,
+            'items_closed': d.items_closed,
+            'items_verified': d.items_verified,
+            'risk_critical': d.risk_critical,
+            'risk_high': d.risk_high,
+            'risk_medium': d.risk_medium,
+            'risk_low': d.risk_low,
+            'risk_acceptable': d.risk_acceptable,
+            'capa_open': d.capa_open,
+            'capa_in_progress': d.capa_in_progress,
+            'capa_closed': d.capa_closed,
+            'capa_overdue': d.capa_overdue,
+            'test_pass': d.test_pass,
+            'test_fail': d.test_fail,
+            'test_need_attention': d.test_need_attention,
+            'notes_observations': d.notes_observations,
+            'computed_at': d.computed_at.isoformat() if d.computed_at else None
+        } for d in dashboards]})
+    
+    @app.route('/api/powerbi/responsibilities')
+    def api_powerbi_responsibilities():
+        """Power BI: Get all responsibilities"""
+        responsibilities = Responsibility.query.all()
+        return jsonify({'data': [{
+            'id': r.id,
+            'name': r.name,
+            'description': r.description,
+            'active': r.active
+        } for r in responsibilities]})
+    
+    @app.route('/api/powerbi/priorities')
+    def api_powerbi_priorities():
+        """Power BI: Get all priorities"""
+        priorities = Priority.query.all()
+        return jsonify({'data': [{
+            'id': p.id,
+            'priority_name': p.priority_name,
+            'order': p.order,
+            'active': p.active
+        } for p in priorities]})
+    
+    @app.route('/api/powerbi/rates')
+    def api_powerbi_rates():
+        """Power BI: Get all rates"""
+        rates = Rate.query.all()
+        return jsonify({'data': [{
+            'id': r.id,
+            'rate_value': r.rate_value,
+            'description': r.description,
+            'active': r.active
+        } for r in rates]})
+    
+    @app.route('/api/powerbi/weights')
+    def api_powerbi_weights():
+        """Power BI: Get all weights"""
+        weights = Weight.query.all()
+        return jsonify({'data': [{
+            'id': w.id,
+            'weight_value': w.weight_value,
+            'description': w.description,
+            'active': w.active
+        } for w in weights]})
+    
+    @app.route('/api/powerbi/audit_logs')
+    def api_powerbi_audit_logs():
+        """Power BI: Get all audit logs"""
+        logs = AuditLog.query.all()
+        return jsonify({'data': [{
+            'id': l.id,
+            'user_id': l.user_id,
+            'table_name': l.table_name,
+            'record_id': l.record_id,
+            'action': l.action,
+            'old_values': l.old_values,
+            'new_values': l.new_values,
+            'timestamp': l.timestamp.isoformat() if l.timestamp else None
+        } for l in logs]})
+    
     # ==================== STEP 2: ASSESSMENT ITEM EDIT/DELETE ====================
     
     @app.route('/building/<int:building_id>/assessment/item/<int:item_id>/edit', methods=['GET', 'POST'])

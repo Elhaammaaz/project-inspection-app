@@ -589,3 +589,168 @@ select:focus-visible {
         scroll-behavior: auto !important;
     }
 }
+
+/* ===========================
+   SAAFAH-INSPIRED CARD DESIGN SYSTEM
+   =========================== */
+
+/* --- KPI / Metric Card --- */
+.saafah-card {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 12px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+    transition: box-shadow 0.3s ease, transform 0.15s ease;
+}
+.saafah-card:hover {
+    box-shadow: 0 8px 28px rgba(0,0,0,0.07), 0 2px 6px rgba(0,0,0,0.04);
+    transform: translateY(-1px);
+}
+
+/* Top accent stripe */
+.saafah-card .card-accent {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+}
+.saafah-card .card-accent.brand   { background: linear-gradient(90deg, #2c5f8d, #c4a035); }
+.saafah-card .card-accent.green   { background: linear-gradient(90deg, #16A34A, transparent 80%); }
+.saafah-card .card-accent.red     { background: linear-gradient(90deg, #DC2626, transparent 80%); }
+.saafah-card .card-accent.amber   { background: linear-gradient(90deg, #D97706, transparent 80%); }
+.saafah-card .card-accent.blue    { background: linear-gradient(90deg, #2563EB, transparent 80%); }
+.saafah-card .card-accent.success { background: linear-gradient(90deg, #16A34A, transparent 80%); }
+.saafah-card .card-accent.danger  { background: linear-gradient(90deg, #DC2626, transparent 80%); }
+.saafah-card .card-accent.warning { background: linear-gradient(90deg, #D97706, transparent 80%); }
+.saafah-card .card-accent.info    { background: linear-gradient(90deg, #0891B2, transparent 80%); }
+.saafah-card .card-accent.primary { background: linear-gradient(90deg, #2c5f8d, transparent 80%); }
+
+/* Label above the number */
+.saafah-card .card-label {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #94A394;
+    margin-bottom: 12px;
+}
+
+/* Big number value */
+.saafah-card .card-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 500;
+    color: #1A2318;
+    line-height: 1;
+}
+.saafah-card .card-value.sm {
+    font-size: 22px;
+}
+.saafah-card .card-value.lg {
+    font-size: 36px;
+}
+
+/* Unit next to the number (%, M, K, etc.)  */
+.saafah-card .card-unit {
+    font-size: 14px;
+    color: #94A394;
+    font-weight: 400;
+    margin-left: 2px;
+}
+
+/* Colored delta badge below the number */
+.saafah-card .card-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    margin-top: 10px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+}
+.saafah-card .card-delta.up    { color: #16A34A; background: rgba(22,163,74,0.08); }
+.saafah-card .card-delta.down  { color: #DC2626; background: rgba(220,38,38,0.06); }
+.saafah-card .card-delta.warn  { color: #D97706; background: rgba(217,119,6,0.07); }
+.saafah-card .card-delta.brand { color: #2c5f8d; background: rgba(44,95,141,0.08); }
+
+/* Sub-label below the number */
+.saafah-card .card-sub {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 11.5px;
+    color: #5A6B5A;
+    margin-top: 6px;
+}
+
+/* --- Section Title with accent bar --- */
+.saafah-section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: #1A2318;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.saafah-section-title::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 16px;
+    background: linear-gradient(180deg, #2c5f8d, #c4a035);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* --- Status Distribution Mini Card --- */
+.saafah-stat-mini {
+    text-align: center;
+    padding: 12px 8px;
+}
+.saafah-stat-mini .stat-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+.saafah-stat-mini .stat-label {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #94A394;
+}
+
+/* --- Card Grid (SAAFAH 4-column) --- */
+.saafah-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 22px; }
+.saafah-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 22px; }
+.saafah-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px; }
+
+@media (max-width: 1100px) {
+    .saafah-grid-4 { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 768px) {
+    .saafah-grid-4, .saafah-grid-3, .saafah-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* Entrance animation for cards */
+.saafah-card.anim-in {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: saafahSlideIn 0.55s ease forwards;
+}
+@keyframes saafahSlideIn {
+    to { opacity: 1; transform: translateY(0); }
+}
+.saafah-card.anim-in:nth-child(1) { animation-delay: 0.05s; }
+.saafah-card.anim-in:nth-child(2) { animation-delay: 0.1s; }
+.saafah-card.anim-in:nth-child(3) { animation-delay: 0.15s; }
+.saafah-card.anim-in:nth-child(4) { animation-delay: 0.2s; }

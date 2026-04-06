@@ -31,70 +31,59 @@
 
     {% if dashboard %}
     <!-- Overall Metrics Row -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card h-100 border-{% if dashboard.overall_building_score >= 75 %}success{% elif dashboard.overall_building_score >= 50 %}warning{% else %}danger{% endif %}">
-                <div class="card-body text-center">
-                    <h6 class="text-muted mb-2">Overall Building Score</h6>
-                    <h1 class="display-3 {% if dashboard.overall_building_score >= 75 %}text-success{% elif dashboard.overall_building_score >= 50 %}text-warning{% else %}text-danger{% endif %}">
-                        {{ "%.1f"|format(dashboard.overall_building_score or 0) }}%
-                    </h1>
-                    {% if dashboard.threshold_pass %}
-                        <span class="badge bg-success"><i class="fas fa-check"></i> Passes Threshold</span>
-                    {% else %}
-                        <span class="badge bg-danger"><i class="fas fa-times"></i> Below Threshold</span>
-                    {% endif %}
-                </div>
+    <div class="saafah-grid-3">
+        <div class="saafah-card anim-in">
+            <div class="card-accent {% if dashboard.overall_building_score >= 75 %}green{% elif dashboard.overall_building_score >= 50 %}amber{% else %}red{% endif %}"></div>
+            <div class="card-label">Overall Building Score</div>
+            <div class="card-value lg {% if dashboard.overall_building_score >= 75 %}text-success{% elif dashboard.overall_building_score >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                {{ "%.1f"|format(dashboard.overall_building_score or 0) }}<span class="card-unit">%</span>
             </div>
+            {% if dashboard.threshold_pass %}
+                <div class="card-delta up"><i class="fas fa-check"></i> Passes Threshold</div>
+            {% else %}
+                <div class="card-delta down"><i class="fas fa-times"></i> Below Threshold</div>
+            {% endif %}
         </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <h6 class="text-muted mb-2">Compliance Rate</h6>
-                    <h1 class="display-3">{{ "%.1f"|format(dashboard.overall_compliance_percent or 0) }}%</h1>
-                    <small class="text-muted">Regulatory Compliance</small>
-                </div>
-            </div>
+        <div class="saafah-card anim-in">
+            <div class="card-accent brand"></div>
+            <div class="card-label">Compliance Rate</div>
+            <div class="card-value lg">{{ "%.1f"|format(dashboard.overall_compliance_percent or 0) }}<span class="card-unit">%</span></div>
+            <div class="card-sub">Regulatory Compliance</div>
         </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <h6 class="text-muted mb-2">Total Assessment Items</h6>
-                    <h1 class="display-3">{{ dashboard.total_assessment_items or 0 }}</h1>
-                    <small class="text-muted">Items Evaluated</small>
-                </div>
-            </div>
+        <div class="saafah-card anim-in">
+            <div class="card-accent blue"></div>
+            <div class="card-label">Total Assessment Items</div>
+            <div class="card-value lg">{{ dashboard.total_assessment_items or 0 }}</div>
+            <div class="card-sub">Items Evaluated</div>
         </div>
     </div>
 
     <!-- Status Distribution -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-tasks"></i> Item Status Distribution</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-3">
-                            <h3 class="text-danger">{{ dashboard.items_open or 0 }}</h3>
-                            <small>Open</small>
-                        </div>
-                        <div class="col-3">
-                            <h3 class="text-warning">{{ dashboard.items_in_progress or 0 }}</h3>
-                            <small>In Progress</small>
-                        </div>
-                        <div class="col-3">
-                            <h3 class="text-success">{{ dashboard.items_closed or 0 }}</h3>
-                            <small>Closed</small>
-                        </div>
-                        <div class="col-3">
-                            <h3 class="text-primary">{{ dashboard.items_verified or 0 }}</h3>
-                            <small>Verified</small>
-                        </div>
+            <div class="saafah-card h-100">
+                <div class="card-accent brand"></div>
+                <div class="saafah-section-title"><i class="fas fa-tasks"></i> Item Status Distribution</div>
+                <div class="row text-center">
+                    <div class="col-3 saafah-stat-mini">
+                        <div class="stat-number text-danger">{{ dashboard.items_open or 0 }}</div>
+                        <div class="stat-label">Open</div>
                     </div>
+                    <div class="col-3 saafah-stat-mini">
+                        <div class="stat-number text-warning">{{ dashboard.items_in_progress or 0 }}</div>
+                        <div class="stat-label">In Progress</div>
+                    </div>
+                    <div class="col-3 saafah-stat-mini">
+                        <div class="stat-number text-success">{{ dashboard.items_closed or 0 }}</div>
+                        <div class="stat-label">Closed</div>
+                    </div>
+                    <div class="col-3 saafah-stat-mini">
+                        <div class="stat-number" style="color:#2c5f8d;">{{ dashboard.items_verified or 0 }}</div>
+                        <div class="stat-label">Verified</div>
+                    </div>
+                </div>
                     <hr>
-                    <div class="progress" style="height: 30px;">
+                    <div class="progress" style="height: 30px; border-radius: 8px; overflow: hidden;">
                         {% set total = (dashboard.items_open or 0) + (dashboard.items_in_progress or 0) + (dashboard.items_closed or 0) + (dashboard.items_verified or 0) %}
                         {% if total > 0 %}
                         <div class="progress-bar bg-danger" style="width: {{ (dashboard.items_open or 0) / total * 100 }}%">{{ dashboard.items_open or 0 }}</div>
@@ -105,36 +94,32 @@
                         <div class="progress-bar bg-secondary" style="width: 100%">No items</div>
                         {% endif %}
                     </div>
-                </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Risk Distribution</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col">
-                            <h3 class="text-danger">{{ dashboard.risk_critical or 0 }}</h3>
-                            <small>Critical</small>
-                        </div>
-                        <div class="col">
-                            <h3 class="text-warning">{{ dashboard.risk_high or 0 }}</h3>
-                            <small>High</small>
-                        </div>
-                        <div class="col">
-                            <h3 class="text-info">{{ dashboard.risk_medium or 0 }}</h3>
-                            <small>Medium</small>
-                        </div>
-                        <div class="col">
-                            <h3 class="text-secondary">{{ dashboard.risk_low or 0 }}</h3>
-                            <small>Low</small>
-                        </div>
-                        <div class="col">
-                            <h3 class="text-success">{{ dashboard.risk_acceptable or 0 }}</h3>
-                            <small>Acceptable</small>
-                        </div>
+            <div class="saafah-card h-100">
+                <div class="card-accent amber"></div>
+                <div class="saafah-section-title"><i class="fas fa-exclamation-triangle"></i> Risk Distribution</div>
+                <div class="row text-center">
+                    <div class="col saafah-stat-mini">
+                        <div class="stat-number text-danger">{{ dashboard.risk_critical or 0 }}</div>
+                        <div class="stat-label">Critical</div>
+                    </div>
+                    <div class="col saafah-stat-mini">
+                        <div class="stat-number text-warning">{{ dashboard.risk_high or 0 }}</div>
+                        <div class="stat-label">High</div>
+                    </div>
+                    <div class="col saafah-stat-mini">
+                        <div class="stat-number" style="color:#0891B2;">{{ dashboard.risk_medium or 0 }}</div>
+                        <div class="stat-label">Medium</div>
+                    </div>
+                    <div class="col saafah-stat-mini">
+                        <div class="stat-number text-secondary">{{ dashboard.risk_low or 0 }}</div>
+                        <div class="stat-label">Low</div>
+                    </div>
+                    <div class="col saafah-stat-mini">
+                        <div class="stat-number text-success">{{ dashboard.risk_acceptable or 0 }}</div>
+                        <div class="stat-label">Acceptable</div>
                     </div>
                 </div>
             </div>
@@ -144,51 +129,45 @@
     <!-- CAPA and Test Status -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-clipboard-check"></i> CAPA Status</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-3">
-                            <h3 class="text-danger">{{ dashboard.capa_open or 0 }}</h3>
-                            <small>Open</small>
-                        </div>
-                        <div class="col-3">
-                            <h3 class="text-warning">{{ dashboard.capa_in_progress or 0 }}</h3>
-                            <small>In Progress</small>
-                        </div>
-                        <div class="col-3">
-                            <h3 class="text-success">{{ dashboard.capa_closed or 0 }}</h3>
-                            <small>Closed</small>
-                        </div>
-                        <div class="col-3">
-                            <h3 class="text-danger">{{ dashboard.capa_overdue or 0 }}</h3>
-                            <small>Overdue</small>
-                        </div>
+            <div class="saafah-card h-100">
+                <div class="card-accent danger"></div>
+                <div class="saafah-section-title"><i class="fas fa-clipboard-check"></i> CAPA Status</div>
+                <div class="row text-center">
+                    <div class="col-3 saafah-stat-mini">
+                        <div class="stat-number text-danger">{{ dashboard.capa_open or 0 }}</div>
+                        <div class="stat-label">Open</div>
+                    </div>
+                    <div class="col-3 saafah-stat-mini">
+                        <div class="stat-number text-warning">{{ dashboard.capa_in_progress or 0 }}</div>
+                        <div class="stat-label">In Progress</div>
+                    </div>
+                    <div class="col-3 saafah-stat-mini">
+                        <div class="stat-number text-success">{{ dashboard.capa_closed or 0 }}</div>
+                        <div class="stat-label">Closed</div>
+                    </div>
+                    <div class="col-3 saafah-stat-mini">
+                        <div class="stat-number text-danger">{{ dashboard.capa_overdue or 0 }}</div>
+                        <div class="stat-label">Overdue</div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-vial"></i> Test Results</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-4">
-                            <h3 class="text-success">{{ dashboard.test_pass or 0 }}</h3>
-                            <small>Pass</small>
-                        </div>
-                        <div class="col-4">
-                            <h3 class="text-danger">{{ dashboard.test_fail or 0 }}</h3>
-                            <small>Fail</small>
-                        </div>
-                        <div class="col-4">
-                            <h3 class="text-warning">{{ dashboard.test_need_attention or 0 }}</h3>
-                            <small>Need Attention</small>
-                        </div>
+            <div class="saafah-card h-100">
+                <div class="card-accent success"></div>
+                <div class="saafah-section-title"><i class="fas fa-vial"></i> Test Results</div>
+                <div class="row text-center">
+                    <div class="col-4 saafah-stat-mini">
+                        <div class="stat-number text-success">{{ dashboard.test_pass or 0 }}</div>
+                        <div class="stat-label">Pass</div>
+                    </div>
+                    <div class="col-4 saafah-stat-mini">
+                        <div class="stat-number text-danger">{{ dashboard.test_fail or 0 }}</div>
+                        <div class="stat-label">Fail</div>
+                    </div>
+                    <div class="col-4 saafah-stat-mini">
+                        <div class="stat-number text-warning">{{ dashboard.test_need_attention or 0 }}</div>
+                        <div class="stat-label">Need Attention</div>
                     </div>
                 </div>
             </div>
@@ -198,56 +177,39 @@
     <!-- Charts Row -->
     <div class="row mb-4">
         <div class="col-md-8">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> System Performance</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="systemPerformanceChart" height="250"></canvas>
-                </div>
+            <div class="saafah-card h-100">
+                <div class="saafah-section-title"><i class="fas fa-chart-bar"></i> System Performance</div>
+                <canvas id="systemPerformanceChart" height="250"></canvas>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Risk Distribution</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="riskPieChart" height="250"></canvas>
-                </div>
+            <div class="saafah-card h-100">
+                <div class="saafah-section-title"><i class="fas fa-chart-pie"></i> Risk Distribution</div>
+                <canvas id="riskPieChart" height="250"></canvas>
             </div>
         </div>
     </div>
 
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-chart-doughnut"></i> Item Status</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="statusDonutChart" height="200"></canvas>
-                </div>
+            <div class="saafah-card h-100">
+                <div class="saafah-section-title"><i class="fas fa-chart-doughnut"></i> Item Status</div>
+                <canvas id="statusDonutChart" height="200"></canvas>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Test Results</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="testResultsChart" height="200"></canvas>
-                </div>
+            <div class="saafah-card h-100">
+                <div class="saafah-section-title"><i class="fas fa-chart-pie"></i> Test Results</div>
+                <canvas id="testResultsChart" height="200"></canvas>
             </div>
         </div>
     </div>
 
     <!-- System Scores -->
     {% if system_scores %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-layer-group"></i> System Scores</h5>
-        </div>
+    <div class="saafah-card mb-4">
+        <div class="card-accent brand"></div>
+        <div class="saafah-section-title"><i class="fas fa-layer-group"></i> System Scores</div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -294,8 +256,9 @@
 
     {% else %}
     <!-- No Dashboard Data -->
-    <div class="card">
-        <div class="card-body text-center py-5">
+    <div class="saafah-card">
+        <div class="card-accent brand"></div>
+        <div class="text-center py-5">
             <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
             <h5>No Dashboard Data Available</h5>
             <p class="text-muted">Complete the assessment process to generate the executive dashboard.</p>

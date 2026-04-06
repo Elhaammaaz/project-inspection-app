@@ -12,38 +12,26 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card border-primary h-100">
-                <div class="card-body text-center">
-                    <h3 class="text-primary">{{ all_users|length }}</h3>
-                    <p class="text-muted mb-0">Total Users</p>
-                </div>
-            </div>
+    <div class="saafah-grid-4 mb-4">
+        <div class="saafah-card anim-in">
+            <div class="card-accent primary"></div>
+            <div class="card-label">Total Users</div>
+            <div class="card-value" style="color:#2c5f8d;">{{ all_users|length }}</div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-warning h-100">
-                <div class="card-body text-center">
-                    <h3 class="text-warning">{{ pending_users|length }}</h3>
-                    <p class="text-muted mb-0">Pending Requests</p>
-                </div>
-            </div>
+        <div class="saafah-card anim-in">
+            <div class="card-accent warning"></div>
+            <div class="card-label">Pending Requests</div>
+            <div class="card-value" style="color:#D97706;">{{ pending_users|length }}</div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-success h-100">
-                <div class="card-body text-center">
-                    <h3 class="text-success">{{ all_users|selectattr('is_active')|list|length }}</h3>
-                    <p class="text-muted mb-0">Active Users</p>
-                </div>
-            </div>
+        <div class="saafah-card anim-in">
+            <div class="card-accent success"></div>
+            <div class="card-label">Active Users</div>
+            <div class="card-value" style="color:#16A34A;">{{ all_users|selectattr('is_active')|list|length }}</div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-info h-100">
-                <div class="card-body text-center">
-                    <h3 class="text-info">{{ all_users|selectattr('role', 'equalto', 'Admin')|list|length }}</h3>
-                    <p class="text-muted mb-0">Admins</p>
-                </div>
-            </div>
+        <div class="saafah-card anim-in">
+            <div class="card-accent info"></div>
+            <div class="card-label">Admins</div>
+            <div class="card-value" style="color:#0891B2;">{{ all_users|selectattr('role', 'equalto', 'Admin')|list|length }}</div>
         </div>
     </div>
 
@@ -65,10 +53,9 @@
     </div>
 
     <!-- All Users Table -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-users"></i> All Users</h5>
-        </div>
+    <div class="saafah-card">
+        <div class="card-accent brand"></div>
+        <div class="saafah-section-title"><i class="fas fa-users"></i> All Users</div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover">
